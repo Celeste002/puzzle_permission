@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>VR Puzzle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.7.0/dist/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js"></script>
+  <style>
+    #status {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 18px;
+      z-index: 10;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+<div id="status"></div>
+
+<a-scene background="color:#88c">
+  <a-assets>
+    <img id="puzzleTex" src="./shield.png">
+  </a-assets>
+
+  <!-- Immersive Environment -->
+  <a-entity environment="preset: default;" ></a-entity>
+
+  <a-entity id="rig" position="0 1.6 4">
+    <a-camera id="cam" cursor="rayOrigin: mouse"></a-camera>
+    <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+  </a-entity>
+
+    <!-- Startbutton -->
+  <a-entity id="permissionBtn" visible="true" position="0 3 -1" class="clickable">
+      <a-plane 
+           id="plane"
+           width="3" 
+           height="1" 
+           color="#2563eb" 
+           opacity="0.9" 
+           material="shader: flat; side: double"
+           class="clickable"
+           animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+           animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
+>
+    </a-plane>
+    <a-text id="permissionBtnText" 
+            value="Start"
+            align="center"  
+            color="#fff" 
+            width="6" 
+            position="0 0 0.05">
+    </a-text>
+
+    <!-- Hover-Animation -->
+    <a-animation begin="mouseenter" attribute="scale" to="1.1 1.1 1.1" dur="200"></a-animation>
+    <a-animation begin="mouseleave" attribute="scale" to="1 1 1" dur="200"></a-animation>
+  </a-entity>
+
+  <!--  Gewinnanzeige -->
+
+  <!-- Hintergrund-Panel -->
+  <a-plane id="puzzleWin"
+           width="6"
+           height="2.5"
+           color="#111"
+           opacity="0.7"
+           position="0 6 -5"
+           material="shader: flat; side: double"
+           visible="false">
+  </a-plane>
+
+  <a-entity id="puzzleText"
+          text="value: Geschafft!; align: center; color: #39ff14; width: 1"
+          color="#fff"
+          width="4"
+          scale="0.5 0.5 0.5"
+          position="0 6 -5"
+          wrap-count="20"
+          visible="false">
+
+  </a-entity>
+
+  <!-- Puzzle-Container -->
+  <a-entity id="solutionRoot" position="1 3 -1"></a-entity>
+  <a-entity id="scrambleRoot" position="1 3 -1"></a-entity>
+</a-scene>
+
+<script type="module">
+
+import { db, app } from './firebase.js';
+import { ref, onValue, set } from './lib/firebase-database.js';
+
+const status = document.getElementById("status");
+const cols = 3;
+const rows = 3;
+const totalPieces = cols * rows;
+let boardState = Array(totalPieces).fill(null);
+
+let selectedPiece = null; // aktuell ausgewähltes Puzzleteil
+
+let permissionTime = null;
+let overallTime = null;
+let puzzleTime = null;
+let endPermissionTime=null;
+
+// Buttons
+const permissionBtn=document.getElementById('permissionBtn');
+const cam=document.getElementById('cam');
+const plane=document.getElementById('plane');
+
+let audioPermission=null;
+let videoPermission=null;
+
+async function checkPermissions() {
+
+  try {
+
+    // Mikrofon prüfen
+    const micStatus = await navigator.permissions.query({ name: "microphone" });
+    console.log("Mic:", micStatus.state); // "granted", "denied", "prompt"
+
+    // Kamera prüfen
+    const camStatus = await navigator.permissions.query({ name: "camera" });
+    console.log("Camera:", camStatus.state);
+
+    return {
+      audio: micStatus.state,
+      video: camStatus.state
+    };
+  } catch (err) {
+    console.warn("Permissions API nicht verfügbar:", err);
+    return null;
+  }
+}
+
+async function updatePermissionsInFirebase() {
+
+    const status = await checkPermissions();
+    if (!status) return;
+
+    set(ref(db, "permissions/audio"), status.audio);
+    set(ref(db, "permissions/video"), status.video);
+
+}
+
+// Einmal beim Laden aufrufen
+updatePermissionsInFirebase();
+
+// Events abonnieren → reagiert live auf Änderungen
+navigator.permissions.query({ name: "microphone" })
+  .then(p => p.onchange = updatePermissionsInFirebase);
+
+navigator.permissions.query({ name: "camera" })
+  .then(p => p.onchange = updatePermissionsInFirebase);
+
+
+onValue(ref(db,"permissions/audio"),(snapshot) => {
+
+  audioPermission=snapshot.val();
+
+})
+onValue(ref(db,"permissions/video"), (snapshot) => {
+
+  videoPermission=snapshot.val();
+
+})
+
+permissionBtn.addEventListener("click", async () =>{
+
+  console.log("click");
+    
+    const status = await checkPermissions();
+    permissionTime = Date.now();
+    overallTime = Date.now();
+    console.log(audioPermission,videoPermission);
+    // Prüfen ob beide schon granted sind
+    if ((status.audio=="granted" && status.video=="granted")||(audioPermission=="granted"&&videoPermission=="granted")) {
+
+      permissionBtn.querySelector('a-plane').setAttribute('color','#22c55e');
+      permissionBtn.querySelector('a-text').setAttribute('value','Permission ✅');
+      initPuzzle();
+      return;
+
+    }
+    // Falls nicht: Erneut anfragen
+    try {
+         console.log("New Try!");
+        await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        // Speichere in Firebase
+        await updatePermissionsInFirebase();
+        console.log("Permission bestätigt und gespeichert!");
+
+        permissionBtn.querySelector('a-plane').setAttribute('color','#22c55e');
+        permissionBtn.querySelector('a-text').setAttribute('value','Permission ✅');
+        initPuzzle();
+
+    } catch (err) {
+
+        permissionBtn.querySelector('a-plane').setAttribute('color','#dc2626');
+        permissionBtn.querySelector('a-text').setAttribute('value','Permission ❌');
+        alert("Zugriff verweigert! Ohne Permission kein Puzzle.");
+    }
+})
+
+
+function initPuzzle(){
+    
+  console.log("restart");
+  permissionBtn.setAttribute("visible","false")
+  permissionBtn.classList.remove("clickable");
+  plane.classList.remove("clickable");
+  cam.removeAttribute("cursor")
+  
+  // Timer starten
+  endPermissionTime = Date.now();
+  puzzleTime = Date.now();
+
+  const solutionRoot = document.getElementById("solutionRoot");
+  const scrambleRoot = document.getElementById("scrambleRoot");
+
+  solutionRoot.innerHTML = "";
+  scrambleRoot.innerHTML = "";
+
+  boardState.fill(null);
+  selectedPiece = null;
+
+  const pieceSize = 0.5;
+  const slotSpacing = 0.6;
+
+  // --- Lösungsslots ---
+  const startX = -0.5;
+  const startY = 0.5;
+
+  for(let i=0;i<totalPieces;i++){
+    
+    const r = Math.floor(i/cols);
+    const c = i % cols;
+    const slot = document.createElement('a-plane');
+    slot.setAttribute('id',`slot-${i}`);
+    slot.setAttribute('class','slot clickable');
+    slot.setAttribute('width', pieceSize);
+    slot.setAttribute('height', pieceSize);
+    slot.setAttribute('position',`${startX + c*slotSpacing} ${startY - r*slotSpacing} 0`);
+    slot.setAttribute('material',
+      `src:#puzzleTex; shader:flat; repeat:${1/cols} ${1/rows}; offset:${(i%cols)/cols} ${1-(Math.floor(i/cols)+1)/rows}; color:#888`);
+    slot.dataset.index = i;
+
+    solutionRoot.appendChild(slot);
+
+    // Slot-Click → nur wenn ein Piece ausgewählt ist
+    slot.addEventListener('click', (e)=>{
+      e.stopPropagation();
+
+      if(!selectedPiece) return;
+
+      const pieceIndex = parseInt(selectedPiece.dataset.index);
+      const slotIndex = parseInt(slot.dataset.index);
+
+      if(pieceIndex === slotIndex && boardState[slotIndex] === null){
+        // korrekt
+        boardState[slotIndex] = pieceIndex;
+        selectedPiece.setAttribute('visible','false');
+        selectedPiece.classList.remove('selected-piece');
+        selectedPiece = null;
+
+        slot.setAttribute('material',
+          `src:#puzzleTex; shader:flat; repeat:${1/cols} ${1/rows}; offset:${(slotIndex%cols)/cols} ${1-(Math.floor(slotIndex/cols)+1)/rows}`);
+
+
+        // ✅ Visuelles Feedback: Slot kurz grün aufleuchten
+        slot.setAttribute('animation__highlight', {
+            property: 'material.color',
+            from: '#0f0',
+            to: '#fff',
+            dur: 500,
+            easing: 'easeInOutQuad'
+        });
+        checkSolved();
+      } else {
+        // falsch → alte Animation entfernen
+        slot.removeAttribute('animation__wrong');
+        // falsch
+        slot.setAttribute('animation__wrong', {
+          property: 'material.color',
+          from: '#888',
+          to: '#f00',
+          dur: 150,
+          dir: 'alternate',
+          loop: 1
+        });
+      }
+    });
+  }
+
+  // --- Scramble Feld Hintergrund ---
+  const scrambleCols = 3;
+  const scrambleRows = 3;
+  const spacing = 0.6;
+  const scrambleOffsetX = -3;
+  const scrambleOffsetY = 0.5;
+
+  const scrambleBg = document.createElement('a-plane');
+  scrambleBg.setAttribute('width', spacing*scrambleCols + 0.2);
+  scrambleBg.setAttribute('height', spacing*scrambleRows + 0.2);
+  scrambleBg.setAttribute('position',
+    `${scrambleOffsetX + (spacing*(scrambleCols-1))/2} ${scrambleOffsetY - (spacing*(scrambleRows-1))/2} -0.01`);
+  scrambleBg.setAttribute('material','color:#aaa; opacity:0.3; shader:flat');
+  scrambleRoot.appendChild(scrambleBg);
+
+  // --- Scramble Pieces ---
+  const order = [...Array(totalPieces).keys()].sort(()=>Math.random()-0.5);
+
+  order.forEach((i,index)=>{
+    const piece = document.createElement('a-plane');
+    piece.setAttribute('class','scramble-piece clickable');
+    piece.setAttribute('width', pieceSize);
+    piece.setAttribute('height', pieceSize);
+    piece.setAttribute('material',
+      `src:#puzzleTex; shader:flat; repeat:${1/cols} ${1/rows}; offset:${(i%cols)/cols} ${1-(Math.floor(i/cols)+1)/rows}`);
+    const r = Math.floor(index / scrambleCols);
+    const c = index % scrambleCols;
+    piece.setAttribute('position',
+      `${scrambleOffsetX + c*spacing} ${scrambleOffsetY - r*spacing} 0.05`);
+    piece.dataset.index = i;
+
+    // Piece-Click → Auswahl togglen
+    piece.addEventListener('click', (e)=>{
+      e.stopPropagation();
+
+      if(piece.getAttribute('visible') === 'false') return;
+
+      if(selectedPiece && selectedPiece !== piece){
+        // ein anderes ist schon ausgewählt → nichts tun
+        return;
+      }
+
+      if(selectedPiece === piece){
+        // abwählen
+        piece.removeAttribute('material');
+        piece.setAttribute('material',
+          `src:#puzzleTex; shader:flat; repeat:${1/cols} ${1/rows}; offset:${(i%cols)/cols} ${1-(Math.floor(i/cols)+1)/rows}`);
+        piece.classList.remove('selected-piece');
+        selectedPiece = null;
+      } else {
+        // auswählen
+        piece.setAttribute('material','color:#ff0; shader:flat');
+        piece.classList.add('selected-piece');
+        selectedPiece = piece;
+      }
+    });
+
+    scrambleRoot.appendChild(piece);
+  });
+}
+
+function checkSolved(){
+
+  const solved = boardState.every((val, idx)=> val === idx);
+
+  if(solved){
+
+    const endTime = Date.now();
+    const permissonDuration = ((endPermissionTime - permissionTime) / 1000).toFixed(2);
+    const overallDuration = ((endTime - overallTime) / 1000).toFixed(2);
+    const puzzleDuration = ((endTime - puzzleTime) / 1000).toFixed(2);
+    
+    status.style.display="block";
+    console.log("Puzzle solved!");
+
+    // ✅ Text über Puzzle einblenden
+
+    const puzzleText = document.getElementById("puzzleText");
+    const winBox = document.getElementById("puzzleWin");
+
+    puzzleText.setAttribute("text", {
+      value: `Geschafft! Du hast \n⏱ ${puzzleDuration} Sekunden gebraucht!`,
+      align: "center",
+      color: "#fff",
+      width: 12,
+      wrapCount: 20
+    });
+
+    puzzleText.setAttribute("visible", "true");
+    winBox.setAttribute("visible", "true");
+
+    // ✅ Animation hinzufügen (z.B. leichtes Pulsieren)
+    winBox.setAttribute("animation__pulse", {
+      property: "scale",
+      dir: "alternate",
+      dur: 1000,
+      easing: "easeInOutSine",
+      loop: true,
+      to: "1.1 1.1 1"
+    });
+
+    console.log("Puzzle solved in", puzzleDuration, "seconds");
+    console.log("Everything solved in", overallDuration, "seconds");
+    console.log("Permission solved in", permissonDuration, "seconds");
+  }
+}
+</script>
+</body>
+</html>
