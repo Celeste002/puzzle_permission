@@ -29,8 +29,19 @@
   <a-entity environment="preset: default;" ></a-entity>
 
   <a-entity id="rig" position="0 1.6 4">
-    <a-camera id="cam" cursor="rayOrigin: mouse"></a-camera>
-    <a-entity cursor="rayOrigin: mouse" raycaster="objects: .clickable"></a-entity>
+    <a-camera></a-camera>
+  
+    <!-- Rechter Controller mit Laser -->
+    <a-entity 
+      laser-controls="hand: right"
+      raycaster="objects: .clickable">
+    </a-entity>
+  
+    <!-- Linker Controller mit Laser -->
+    <a-entity 
+      laser-controls="hand: left"
+      raycaster="objects: .clickable">
+    </a-entity>
   </a-entity>
 
     <!-- Startbutton -->
@@ -405,3 +416,4 @@ function checkSolved(){
 </script>
 </body>
 </html>
+
