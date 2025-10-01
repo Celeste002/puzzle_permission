@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Puzzle</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, sans-serif;
+      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .start-box {
+      background: rgba(255, 255, 255, 0.9);
+      padding: 2rem 3rem;
+      border-radius: 1.5rem;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      text-align: center;
+      max-width: 500px;
+      animation: fadeIn 1s ease;
+    }
+
+    .start-box h1 {
+      margin-bottom: 1rem;
+      font-size: 1.8rem;
+      color: #333;
+    }
+
+    .start-box p {
+      font-size: 1rem;
+      color: #555;
+      margin-bottom: 1.5rem;
+      line-height: 1.4;
+    }
+
+    .icons {
+      font-size: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    #permissionBtn {
+      background: #4a90e2;
+      color: white;
+      border: none;
+      padding: 0.8rem 2rem;
+      border-radius: 0.75rem;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+    }
+
+    #permissionBtn:hover {
+      background: #357ab7;
+      transform: scale(1.05);
+    }
+
+    #status {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 2rem;
+      color: #333;
+      display: none;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .container {
+      display: flex;
+      gap: 40px;
+    }
+    
+    .pieces, .board {
+      display: grid;
+      grid-template-columns: repeat(3, 100px);
+      gap: 10px;
+    }
+
+    .slot, .piece {
+      width: 100px;
+      height: 100px;
+      border: 2px solid #ccc;
+      background: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .piece {
+      cursor: grab;
+    }
+
+    .solved {
+      color: green;
+      font-weight: bold;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="startScreen">
+    <div class="container_screen">
+      <div class="start-box">
+      <h1>Puzzle</h1>
+      <p>Bevor es losgeht, brauchen wir Zugriff auf dein <b>Mikrofon</b> und deine <b>Kamera</b>.<br>
+         Bitte klicke auf „Start“, um die Berechtigungen zu erteilen.</p>
+
+      <div class="icons">
+        <span>🎤</span>
+        <span>📷</span>
+      </div>
+
+      <button id="permissionBtn">Start</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="game" style="display:none;">
+    <div class="container">
+      <!-- Puzzle Teile -->
+      <div>
+        <h3>Teile</h3>
+        <div class="pieces" id="pieces"></div>
+      </div>
+
+      <!-- Puzzle Board -->
+      <div>
+        <h3>Board</h3>
+        <div class="board" id="board"></div>
+      </div>
+    </div>
+
+    <p id="status" class="solved" style="display:none;"></p>
+  </div>
+
+  <script type="module" src="puzzle_logic_sync.js"></script>
+</body>
+</html>
