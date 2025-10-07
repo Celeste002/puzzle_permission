@@ -6,12 +6,9 @@ const permissionBtn = document.getElementById('permissionBtn');
 const plane = document.getElementById('plane');
 const startEntity = document.getElementById('startEntity');
 
-const popupOverlay = document.getElementById("popupOverlay");
-const popupBox = document.getElementById("popupBox");
-//const allowBtn = document.getElementById("allowBtn");
-//const denyBtn = document.getElementById("denyBtn");
-const rememberChk = document.getElementById("rememberChk");
+const rememberBox = document.getElementById("rememberBox");
 const resetBtn = document.getElementById("resetBtn");
+let remember = false;
 
 const permRef = ref(db, "permissions/puzzle_access");
 let hasUserResponded = false;
@@ -24,10 +21,6 @@ const cols=3, rows=3, totalPieces=cols*rows;
 let boardState=Array(totalPieces).fill(null);
 let selectedPiece=null;
 let errors=0;
-
-
-
-
 
 
 resetBtn.addEventListener("click", async () => {
@@ -47,21 +40,26 @@ const allowBtn = document.getElementById("popup-allow");
 const denyBtn = document.getElementById("popup-deny");
 
 function showPopup(message) {
+
   popup.setAttribute("visible", "true");
   document.getElementById("popup-text").setAttribute("value", message);
 
-  allowBtn.onclick = () => {
-    
-    startPuzzle();
+  rememberBox.addEventListener("click", () => {
+    remember = !remember;
+    rememberBox.setAttribute("color", remember ? "#2ecc71" : "#444");
+  });
+
+  allowBtn.onclick = async () => {
     popup.setAttribute("visible", "false");
     hasUserResponded = true;
-    updatePermissionsInFirebase(true, rememberChk.checked)
+    await updatePermissionsInFirebase(true, remember);
+    startPuzzle();
     
   };
-  denyBtn.onclick = () => {
+  denyBtn.onclick = async () => {
     popup.setAttribute("visible", "false");
     hasUserResponded = true;
-    updatePermissionsInFirebase(false, rememberChk.checked);
+    await updatePermissionsInFirebase(false, remember);
     alert("Zugriff verweigert! Ohne Permission kein Puzzle.");
     
   };
@@ -250,4 +248,3 @@ function checkSolved(){
     console.log("Everything solved with", errors,"Fehlern!");
   }
 }
-
