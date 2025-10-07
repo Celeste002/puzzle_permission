@@ -40,7 +40,7 @@ const allowBtn = document.getElementById("popup-allow");
 const denyBtn = document.getElementById("popup-deny");
 
 function showPopup(message) {
-
+  console.log("go!")
   popup.setAttribute("visible", "true");
   document.getElementById("popup-text").setAttribute("value", message);
 
@@ -248,3 +248,4 @@ function checkSolved(){
     console.log("Everything solved with", errors,"Fehlern!");
   }
 }
+
