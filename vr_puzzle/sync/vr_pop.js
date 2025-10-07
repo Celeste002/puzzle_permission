@@ -8,8 +8,8 @@ const startEntity = document.getElementById('startEntity');
 
 const popupOverlay = document.getElementById("popupOverlay");
 const popupBox = document.getElementById("popupBox");
-const allowBtn = document.getElementById("allowBtn");
-const denyBtn = document.getElementById("denyBtn");
+//const allowBtn = document.getElementById("allowBtn");
+//const denyBtn = document.getElementById("denyBtn");
 const rememberChk = document.getElementById("rememberChk");
 const resetBtn = document.getElementById("resetBtn");
 
@@ -27,6 +27,9 @@ let errors=0;
 
 
 
+
+
+
 resetBtn.addEventListener("click", async () => {
 
   await set(ref(db, "permissions/puzzle_access"), {
@@ -39,14 +42,28 @@ resetBtn.addEventListener("click", async () => {
 });
 
 // ------------------- Popup Funktionen -------------------
-function showPopup(){
-  
-  popupOverlay.style.display="block";
-  popupBox.style.display="block";
-}
-function hidePopup(){
-  popupOverlay.style.display="none";
-  popupBox.style.display="none";
+const popup = document.getElementById("popup-wrapper");
+const allowBtn = document.getElementById("popup-allow");
+const denyBtn = document.getElementById("popup-deny");
+
+function showPopup(message) {
+  popup.setAttribute("visible", "true");
+  document.getElementById("popup-text").setAttribute("value", message);
+
+  allowBtn.onclick = () => {
+    popup.setAttribute("visible", "false");
+    hasUserResponded = true;
+    updatePermissionsInFirebase(true, rememberChk.checked);
+    startPuzzle();
+    
+  };
+  denyBtn.onclick = () => {
+    popup.setAttribute("visible", "false");
+    hasUserResponded = true;
+    updatePermissionsInFirebase(false, rememberChk.checked);
+    alert("Zugriff verweigert! Ohne Permission kein Puzzle.");
+    
+  };
 }
 
 // ------------------- Firebase -------------------
@@ -92,22 +109,9 @@ plane.addEventListener('click', async (e) => {
     console.log("Permission Start Button clicked → Berechtigungs-Popup öffnen");
     
     permissionTime=Date.now();
-    if(!permissionGranted) showPopup();
+    if(!permissionGranted) showPopup("Darf die App auf deine Daten zugreifen?");
     else startPuzzle();
   });
-// ------------------- Popup Button Events -------------------
-allowBtn.addEventListener("click", async ()=>{
-  hasUserResponded = true;
-  await updatePermissionsInFirebase(true, rememberChk.checked);
-  hidePopup();
-  startPuzzle();
-});
-denyBtn.addEventListener("click", async ()=>{
-  hasUserResponded = true;
-  await updatePermissionsInFirebase(false, rememberChk.checked);
-  hidePopup();
-  alert("Zugriff verweigert! Ohne Permission kein Puzzle.");
-});
 
 
 // ------------------- Puzzle Logik -------------------
