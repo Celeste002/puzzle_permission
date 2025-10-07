@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>VR Puzzle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.7.0/dist/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js"></script>
+  <style>
+    #status {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 18px;
+      z-index: 10;
+      display: none;
+      color: #0f0;
+    }
+
+    /* Popup Styles */
+    #popupOverlay {
+      position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; z-index:1000;
+    }
+    #popupBox {
+      position: fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background: #222; padding:2rem; border-radius:1rem; box-shadow:0 8px 20px rgba(0,0,0,0.5);
+      text-align:center; display:none; z-index:1001; color: #fff;
+    }
+    #popupBox button { padding:0.5rem 1rem; margin:0 0.5rem; cursor:pointer; }
+    #popupBox label { display:block; margin-top:1rem; }
+  </style>
+</head>
+<body>
+<div id="status"></div>
+
+<a-scene background="color:#88c">
+  <a-assets>
+    <img id="puzzleTex" src="./shield.png">
+  </a-assets>
+
+  <!-- Immersive Environment -->
+  <a-entity environment="preset: default;"></a-entity>
+
+  <a-entity id="rig" position="0 1.6 4">
+    <a-camera id="cam" look-controls rayOrigin="mouse"
+        raycaster="objects: .clickable" cursor="rayOrigin: mouse">
+    </a-camera>
+  </a-entity>
+
+  <!-- Start-Permission Entity -->
+  <a-entity id="startEntity" visible="true" position="0 4 -1" class="clickable">
+    <a-plane id="startPlane" width="7" height="3" color="#fff" opacity="0.9">
+      <a-text
+        id="startText" 
+        value="Bevor es losgeht, brauchst du Zugriff auf das Puzzle. Klicke auf Start, sobald die Berechtigung erteilt wurde."
+        align="center" color="#000" width="5.5" position="0 0.5 0.05">
+      </a-text>
+    </a-plane>
+  </a-entity>
+
+  <a-entity id="resetBtn" position="0 3.5 -1" class="clickable">
+    <a-plane width="1" height="0.2" color="#ef4444" class="clickable" opacity="0.9" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
+      <a-text value="Reset Permissions" align="center" color="#fff" width="2" position="0 0 0.05"></a-text>
+    </a-plane>
+  </a-entity>
+
+  <!-- Startbutton -->
+  <a-entity id="permissionBtn" visible="true" position="0 3 -1" class="clickable">
+    <a-plane id="plane" width="2" height="0.4" color="#2563eb" opacity="0.9"
+      class="clickable"
+      animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
+    </a-plane>
+    <a-text id="permissionBtnText" value="Start" align="center" color="#fff" width="6" position="0 0 0.05"></a-text>
+  </a-entity>
+
+
+  <!-- Gewinnanzeige -->
+  <a-plane id="puzzleWin" width="6" height="2.5" color="#111" opacity="0.7" position="0 6 -5" visible="false"></a-plane>
+  <a-entity id="puzzleText" text="value: Geschafft!; align:center; color:#39ff14; width:1" color="#fff" width="4" scale="0.5 0.5 0.5" position="0 6 -5" wrap-count="20" visible="false"></a-entity>
+
+  <!-- Puzzle-Container -->
+  <a-entity id="solutionRoot" position="1 3 -1"></a-entity>
+  <a-entity id="scrambleRoot" position="1 3 -1"></a-entity>
+</a-scene>
+
+<!-- Firebase-Popup -->
+<div id="popupOverlay"></div>
+<div id="popupBox">
+  <h3>Permission Request</h3>
+  <p>Die VR-App möchte Zugriff auf das Puzzle. Bitte erteile die Berechtigung.</p>
+  <label><input type="checkbox" id="rememberChk"> Entscheidung merken</label>
+  <div>
+    <button id="allowBtn">Allow</button>
+    <button id="denyBtn">Deny</button>
+  </div>
+</div>
+
+<script type="module" src="vr_pop.js"></script>
+</body>
+</html>
