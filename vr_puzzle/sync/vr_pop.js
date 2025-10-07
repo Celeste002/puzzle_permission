@@ -7,6 +7,7 @@ const plane = document.getElementById('plane');
 const startEntity = document.getElementById('startEntity');
 
 const rememberBox = document.getElementById("rememberBox");
+const rememberCheck = document.getElementById("rememberCheck");
 const resetBtn = document.getElementById("resetBtn");
 let remember = false;
 
@@ -26,9 +27,10 @@ let errors=0;
 resetBtn.addEventListener("click", async () => {
 
   await set(ref(db, "permissions/puzzle_access"), {
+    permType: 'puzzle_access',
     granted: false,
     remember: false,
-    permType: 'puzzle_access',
+    timestamp: new Date().toISOString(),
     source: 'vr'
   });
   console.log("Permissions zurückgesetzt!");
@@ -40,13 +42,15 @@ const allowBtn = document.getElementById("popup-allow");
 const denyBtn = document.getElementById("popup-deny");
 
 function showPopup(message) {
-  console.log("go!")
+
   popup.setAttribute("visible", "true");
   document.getElementById("popup-text").setAttribute("value", message);
+  permissionBtn.classList.remove("clickable")
 
+  // Checkbox Toggle (Häkchen sichtbar / unsichtbar)
   rememberBox.addEventListener("click", () => {
     remember = !remember;
-    rememberBox.setAttribute("color", remember ? "#2ecc71" : "#444");
+    rememberCheck.setAttribute("visible", remember);
   });
 
   allowBtn.onclick = async () => {
@@ -54,16 +58,16 @@ function showPopup(message) {
     hasUserResponded = true;
     await updatePermissionsInFirebase(true, remember);
     startPuzzle();
-    
   };
+
   denyBtn.onclick = async () => {
     popup.setAttribute("visible", "false");
     hasUserResponded = true;
     await updatePermissionsInFirebase(false, remember);
     alert("Zugriff verweigert! Ohne Permission kein Puzzle.");
-    
   };
 }
+
 
 // ------------------- Firebase -------------------
 onValue(permRef, async (snapshot)=>{
@@ -104,6 +108,7 @@ async function updatePermissionsInFirebase(granted, remember=false){
 }
 // ------------------- Start Button Events -------------------
 plane.addEventListener('click', async (e) => {
+
     e.stopPropagation();
     console.log("Permission Start Button clicked → Berechtigungs-Popup öffnen");
     
@@ -248,4 +253,3 @@ function checkSolved(){
     console.log("Everything solved with", errors,"Fehlern!");
   }
 }
-
