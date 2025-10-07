@@ -51,10 +51,11 @@ function showPopup(message) {
   document.getElementById("popup-text").setAttribute("value", message);
 
   allowBtn.onclick = () => {
+    
+    startPuzzle();
     popup.setAttribute("visible", "false");
     hasUserResponded = true;
-    updatePermissionsInFirebase(true, rememberChk.checked);
-    startPuzzle();
+    updatePermissionsInFirebase(true, rememberChk.checked)
     
   };
   denyBtn.onclick = () => {
@@ -249,3 +250,4 @@ function checkSolved(){
     console.log("Everything solved with", errors,"Fehlern!");
   }
 }
+
