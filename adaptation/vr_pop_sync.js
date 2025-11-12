@@ -72,15 +72,12 @@ function pulseMic(active) {
   if (active) {
     mic.setAttribute("animation__pulse", {
       property: "scale",
-      to: "1.2 1.2 1.2",
+      to: "0 0 0",
       dir: "alternate",
       dur: 600,
       loop: true,
       easing: "easeInOutSine"
     });
-    mic.setAttribute("color", "#0f0");
-  } else {
-    mic.removeAttribute("animation__pulse");
     mic.setAttribute("color", "#f00");
   }
 }
@@ -226,7 +223,7 @@ async function askPermission(type) {
     audio: {
       title: "Mikrofonzugriff erlauben?",
       message:
-        "Darf die App auf dein Mikrofon zugreifen, um mögliche Sprachbefehle zu verarbeiten?",
+        "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
     },
     data: {
       title: "Datenspeicherung erlauben?",
