@@ -184,8 +184,8 @@
 
     /* perm-dot */
     .perm-dot {
-      width: 10px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
       border-radius: 50%;
       background-color: #ef4444;
       box-shadow: 0 0 6px rgba(0,0,0,0.15);
@@ -195,8 +195,6 @@
       transition: transform .12s ease, box-shadow .12s ease;
     }
     .perm-dot.allowed { background: #1eb910; box-shadow: 0 0 10px rgba(16,185,129,0.6); }
-    .perm-dot.mixed   { background: #b59f3b; box-shadow: 0 0 8px rgba(181,159,59,0.5); }
-
     .perm-dot:hover { transform: scale(1.12); }
     .perm-dot:hover::after {
       content: attr(data-tooltip);
@@ -241,9 +239,13 @@
           <button id="motionDot" class="perm-dot" data-tooltip="Berechtigung zurücksetzen"></button>
         </div>
         
-        <h1>Mathe Quiz</h1>
-        <p>Bevor es losgeht, benötigen wir die Berechtigung für die Aufnahme deines Quizzes.<br>
-           Bitte klicke auf „Start“, um die Berechtigung zu erteilen. Falls die Berechtigung schon erteilt wurde, geht es direkt los!</p>
+        <h1>Willkommen zum Mathe-Quiz!</h1>
+        <p>
+          Bevor du starten kannst, benötigt die Anwendung einige Berechtigungen.<br>
+          Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.<br>
+          Zum Zurücksetzen der Berechtigungen drücke einfach auf die Statusanzeige links oben.<br>
+          Klicke auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten.
+        </p>
 
         <button id="startBtn">Start</button>
         
@@ -288,8 +290,8 @@
     <p id="popupText">Diese Anwendung kann deinen aktuellen Puzzle-Fortschritt speichern, damit du später an derselben Stelle weitermachen kannst. Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden. Möchtest du die Speicherung deines Fortschritts erlauben?</p>
     <label><input type="checkbox" id="rememberChk"> Entscheidung merken</label>
     <div style="margin-top:1rem;">
-      <button id="allowBtn">Allow</button>
-      <button id="denyBtn">Deny</button>
+      <button id="allowBtn">Erlauben</button>
+      <button id="denyBtn">Ablehnen</button>
     </div>
   </div>
 
