@@ -52,7 +52,7 @@ const questions = [
   { q: "Was ist 19 - 7?", answers: ["12", "13"], correct: 0 },
 ];
 
-
+let randomQuestion = shuffle([...questions]);
 // -------------------- Helper: Sync Notice --------------------
 function showSyncNoticeVR(msg="Fortschritt gespeichert") {
 
@@ -89,7 +89,7 @@ function pulseMic(active) {
   if (active) {
     mic.setAttribute("animation__pulse", {
       property: "scale",
-      to: "1.2 1.2 1.2",
+      to: "0 0 0",
       dir: "alternate",
       dur: 600,
       loop: true,
@@ -102,6 +102,7 @@ function pulseMic(active) {
 // 🔹 POPUP LOGIK
 // ===================================================
 function showPopup(title, message, onAllow, onDeny) {
+
   popup.setAttribute("visible", "true");
   popupHead.setAttribute("value", title);
   popupText.setAttribute("value", message);
@@ -135,13 +136,13 @@ async function askPermission(type) {
   const popupConfig = {
     audio: {
       title: "Mikrofonzugriff erlauben?",
-      message: "Darf die App auf dein Mikrofon zugreifen, um mögliche Sprachbefehle zu verarbeiten?",
+      message: "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
     },
     data: {
       title: "Datenspeicherung erlauben?",
       message: "Diese Anwendung kann deinen Quiz-Fortschritt speichern, damit du später weiterspielen kannst.\n\n" +
                "Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden.\n\n" +
-               "Möchtest du die Speicherung deines Fortschritts erlauben?",
+               "Magst du die Speicherung deines Fortschritts erlauben?",
     }
   };
 
@@ -232,6 +233,19 @@ function allRememberDenied() {
 // ===================================================
 // 🔹 QUIZ LOGIK
 // ===================================================
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]
+    ];
+  }
+  return array;
+}
+
 async function startQuiz() {
   startEntity.setAttribute("visible", "false");
   permissionBtn.setAttribute("visible", "false");
@@ -256,17 +270,19 @@ async function startQuiz() {
 }
 
 function loadQuestion() {
+
   if (currentQuestion >= questions.length) {
     showResult();
     
     return;
   }
 
-  const q = questions[currentQuestion];
+  const q = randomQuestion[currentQuestion];
   questionText.setAttribute("value", q.q);
 
   const answerButtons = document.querySelectorAll('.answer');
   answerButtons.forEach((btn, i) => {
+    btn.classList.add("clickable")
     btn.setAttribute("color", "#2563eb");
     btn.setAttribute("visible", "true");
     const label = btn.querySelector("a-text");
@@ -308,6 +324,10 @@ function showResult() {
   quizWin.setAttribute("visible", "true");
     const restartButton = document.getElementById("restartButtonVR");
     restartButton.setAttribute("visible", "true");
+    const answerButtons = document.querySelectorAll('.answer');
+  answerButtons.forEach((btn) => {
+    btn.classList.remove("clickable")
+  })
 
   const correct = userAnswers.filter((a) => a === true).length;
   const resultText = `Ergebnis: ${correct} von ${questions.length} richtig!`;
