@@ -164,16 +164,13 @@
 
     /* Container für Statusanzeige */
     #permissionStatus {
-      position: fixed;
-      transform: translateX(-50%);
+      position: static;
+      top: 20px;
+      left: 5%;
       display: flex;
-      gap: 20px;
+      gap: 12px;
       align-items: center;
-      background: rgba(30, 30, 30, 0.7);
-      padding: 8px 8px;
-      border-radius: 20px;
-      backdrop-filter: blur(6px);
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
+      z-index: 2100;
     }
     #syncNotice {
       position: absolute;
@@ -222,11 +219,6 @@
     .perm-dot.allowed {
       background-color: #0f0;
       box-shadow: 0 0 10px #0f0;
-    }
-
-    .perm-dot.mixed {
-      background-color: rgb(158, 155, 94);
-      box-shadow: 0 0 10px rgb(158, 155, 94);
     }
 
     .perm-dot:hover::after {
@@ -281,9 +273,12 @@
           <button id="motionDot" class="perm-dot" data-tooltip="Berechtigung zurücksetzen"></button>
         </div>
         
-        <h1>Puzzle</h1>
-        <p>Bevor es losgeht, benötigen wir die Berechtigung für die Aufnahme deines Puzzle.<br>
-           Bitte klicke auf „Start“, um die Berechtigung zu erteilen. Falls die Berechtigung schon erteilt wurde, geht es direkt los!</p>
+        <h1>Willkomen zum Puzzle!</h1>
+        <p>Bevor du starten kannst, benötigt die Anwendung einige Berechtigungen.<br>
+          Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.<br>
+          Zum Zurücksetzen der Berechtigungen drücke einfach auf die Statusanzeige links oben.<br>
+          Klicke auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten.
+        </p>
 
         <button id="permissionBtn">Start</button>
         
