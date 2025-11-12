@@ -77,22 +77,14 @@ function updatePermissionDotCombined() {
   const dot = document.getElementById("motionDot");
   if (!dot) return;
   const allowed = dot.classList.contains("allowed");
-  const mixed = dot.classList.contains("mixed");
 
   if (bothGranted && !allowed) {
-    dot.classList.remove("mixed");
+    
     dot.classList.add("allowed", "pulse");
     setTimeout(() => dot.classList.remove("pulse"), 500);
   } else if (!bothGranted && allowed) {
     dot.classList.remove("allowed");
-  } else if(one && !bothGranted){
-    dot.classList.add("mixed")
-  } else if(!one && mixed){
-    dot.classList.remove("mixed");
-  } else{
-    dot.classList.remove("mixed")
-    dot.classList.remove("allowed")
-  }
+  } 
   return bothGranted;
 }
 
@@ -237,14 +229,14 @@ async function askPermission(type) {
         audio: {
             title: "Mikrofonnutzung zulassen?",
             message:
-                "Darf diese Anwendung auf dein Puzzle-Audio bzw. Soundeffekte zugreifen, um das Spielerlebnis zu verbessern?",
+                "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
         },
         data: {
             title: "Datenspeicherung zulassen?",
             message:
                 "Diese Anwendung kann deinen Puzzle-Fortschritt lokal auf deinem Gerät speichern, damit du später weiterspielen kannst. " +
                 "Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden.\n\n" +
-                "Möchtest du die lokale Speicherung deines Fortschritts erlauben?",
+                "Möchtest du die Speicherung deines Fortschritts erlauben?",
         },
     };
 
@@ -382,7 +374,7 @@ function checkSolved() {
     const restartBtn = document.getElementById("restartBtn");
 
     statusEl.style.display = "block";
-    statusText.textContent = "Puzzle gelöst! 🎉";
+    statusText.textContent = "Du hast das Puzzle erfolgreich gelöst! Du kannst das Puzzle über den Neustart-Button erneut beginnen.";
     statusTime.textContent = `Zeit: ${puzzleDuration} Sekunden`;
 
     restartBtn.addEventListener("click", restartGame);
