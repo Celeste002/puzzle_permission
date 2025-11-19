@@ -1,0 +1,568 @@
+import { db } from './firebase.js';
+import { ref, onValue, set, get, push } from './lib/firebase-database.js';
+
+// -------------------- DOM Elemente --------------------
+const startBtn = document.getElementById("startBtn");
+const ss = document.getElementById("startScreen");
+
+const popupOverlay = document.getElementById("popupOverlay");
+const popupBox = document.getElementById("popupBox");
+const allowBtn = document.getElementById("allowBtn");
+const denyBtn = document.getElementById("denyBtn");
+const rememberChk = document.getElementById("rememberChk");
+const motionDot = document.getElementById("motionDot");
+const gameBox = document.getElementById("gameBox");
+const mic = document.getElementById("micReminder");
+const micText = document.getElementById("micText");
+let ans1 = document.getElementById("ans1")
+let ans2 = document.getElementById("ans2")
+
+let question=document.getElementById("question")
+let answers=document.getElementById("answers")
+
+let taskStartTime = null;
+let overallTime = null;
+let puzzleTime = null;
+let endPermissionTime = null;
+let permissionPopupStartTime = null;
+let counter=0;
+
+const permissions = {
+  audio: ref(db, "permission_math/audio"),
+  data: ref(db, "permission_math/data")
+};
+
+// -------------------- Spielzustand --------------------
+let currentQuestion = 0;
+let userAnswers = [];
+const stateRef = ref(db, "math/state");
+let score=0;
+
+// Lokale Statusvariablen (korrekt als Objekte)
+let audioPermission = { granted: false, remember: false };
+let dataPermission  = { granted: false, remember: false };
+// -------------------- Fragenkatalog --------------------
+const questions = [
+  { q: "Was ist 3 + 4?", answers: ["6", "7"], correct: 1 },
+  { q: "Was ist 5 x 2?", answers: ["10", "12"], correct: 0 },
+  { q: "Was ist 9 - 3?", answers: ["5", "6"], correct: 1 },
+  { q: "Was ist 15 / 3?", answers: ["5", "3"], correct: 0 },
+  { q: "Was ist 17 - 3?", answers: ["14", "19"], correct: 0 },
+  { q: "Was ist 8 + 3?", answers: ["11", "12"], correct: 0 },
+  { q: "Was ist 9 x 3?", answers: ["18", "27"], correct: 1 },
+  { q: "Was ist 6 + 12?", answers: ["18", "16"], correct: 0 },
+  { q: "Was ist 9 / 3?", answers: ["6", "3"], correct: 1 },
+  { q: "Was ist 19 - 7?", answers: ["12", "13"], correct: 0 },
+];
+// -------------------- Session ID --------------------
+// ---- SESSION ID HANDLING ----
+function newSessionId() {
+    return "S_Lap_Math_" + counter++;
+}
+
+function getSessionId() {
+  return localStorage.getItem("sessionId");
+}
+function getLogRef() {
+  return ref(db, "study_logs/" + getSessionId());
+}
+// -------------------- Logging Helper --------------------
+function logEvent(eventType, details = {}) {
+    push(getLogRef(), {
+        eventType,
+        timestamp: Date.now(),
+        device: "Laptop",
+        ...details
+    });
+    console.log("[LOG]", eventType, details);
+}
+
+async function endStudySession() {
+    console.log("Study session finished. Resetting session ID.");
+
+    // log final event
+    logEvent("session_complete");
+
+    // aktuelle Session-ID löschen
+    localStorage.removeItem("sessionId");
+}
+async function startStudySession() {
+    console.log("Study session started. Creating new session ID.");
+
+    // neue generieren
+    const newId = newSessionId();
+
+    localStorage.setItem("sessionId", newId);
+
+    const newSessionRef = ref(db, "study_logs/" + newId);
+
+    await set(newSessionRef, {
+        sessionId: newId,
+        createdAt: Date.now(),
+        note: "New participant started"
+    });
+
+    console.log("New session ID:", newId);
+}
+
+
+//let randomQuestion = shuffle([...questions]);
+
+// -------------------- Firebase Math State --------------------
+
+// ✦ State aus Firebase laden (für VR/Laptop Sync)
+async function loadExistingState() {
+    const snapshot = await get(stateRef);
+    const state = snapshot.val();
+
+    if (!state) return;
+
+    currentQuestion = state.currentQuestion ?? 0;
+    score = state.score ?? 0;
+}
+// ------------------------------
+//  🔄 LOAD PROGRESS BUTTON
+// ------------------------------
+const loadBtn = document.getElementById("loadProgressBtn");
+
+async function loadProgressFromFirebase() {
+    console.log("🔄 Lade aktuellen Mathe-Status...");
+
+    await loadExistingState()
+    loadQuestion();
+    console.log("✅ Fortschritt geladen:", state);
+
+    // Logging
+    logEvent("manual_load", {
+        questionIndex: currentQuestion,
+        score
+    });
+}
+
+// -------------------- Mikrofon-Erinnerung --------------------
+function pulseMic(active) {
+
+    if (!mic) return;
+    
+
+    if (active) {
+      mic.style.display="block";
+      mic.style.opacity = 1;
+      micText.style.opacity=1
+      setTimeout(() => 
+              {
+                  if(micText.style.opacity==1){
+                      micText.style.opacity=0
+                  }else{
+                      micText.style.opacity=1;
+                  }
+
+              }, 2000);
+          mic.style.backgroundColor = "rgba(255, 30, 0, 1)";
+          mic.style.boxShadow = "0 0 15px rgba(255, 51, 0, 0.6)"; 
+
+          setInterval(() => 
+              {
+                  if(mic.style.opacity==1){
+                      mic.style.opacity=0
+                  }else{
+                      mic.style.opacity=1;
+                  }
+
+              }, 1200);
+          
+      }
+}
+// -------------------- Helper: Sync Notice --------------------
+function showSyncNotice(msg = "Fortschritt gespeichert") {
+    let el = document.getElementById('syncNotice');
+    el.textContent = msg;
+    el.style.display = 'block';
+    setTimeout(() => el.style.display = 'none', 600);
+}
+
+// -------------------- Permissions --------------------
+// aktualisiert LED nur, wenn beide aktiv sind
+function updatePermissionDotCombined() {
+
+  const bothGranted = audioPermission.granted && dataPermission.granted;
+  const one= audioPermission.granted || dataPermission.granted;
+  const dot = document.getElementById("motionDot");
+  if (!dot) return;
+  const allowed = dot.classList.contains("allowed");
+
+  if (bothGranted && !allowed) {
+    
+    dot.classList.add("allowed", "pulse");
+    setTimeout(() => dot.classList.remove("pulse"), 500);
+  } else if (!bothGranted && allowed) {
+    dot.classList.remove("allowed");
+  } 
+  return bothGranted;
+}
+
+// schreibt Permission in Firebase (schreibt nur, ändert keine lokalen Flags)
+async function updatePermissionsInFirebase(type, granted, remember = false) {
+  
+    const refPath = `permission_math/${type}`;
+  await set(ref(db, refPath), {
+    permType: type,
+    granted: granted,
+    remember: remember,
+    timestamp: new Date().toISOString(),
+    source: "laptop"
+  });
+  console.log(`[PERM] ${type} → granted=${granted}, remember=${remember}`);
+}
+
+// init permission listeners: nur lesen, keine Rückschreibungen (vermeidet Race)
+function initPermissionListeners() {
+  const audioRef = ref(db, "permission_math/audio");
+  const dataRef = ref(db, "permission_math/data");
+
+  // Handler: übernimmt die Struktur {granted, remember} sauber in lokale Objekte
+  const handlePermissionChange = (type, val) => {
+    if (!val) return;
+
+    if (type === "audio") {
+      audioPermission.granted = val.granted;
+      audioPermission.remember = val.remember;
+    } else {
+      dataPermission.granted = val.granted;
+      dataPermission.remember = val.remember;
+    }
+    // Update combined UI indicator
+    updatePermissionDotCombined();
+  };
+
+  onValue(audioRef, snap => handlePermissionChange("audio", snap.val()));
+  onValue(dataRef,  snap => handlePermissionChange("data", snap.val()));
+}
+
+function allPermissionsDenied() {
+  return !audioPermission.granted && !dataPermission.granted;
+}
+function allRememberDenied() {
+  return !audioPermission.remember && !dataPermission.remember;
+}
+
+// -------------------- Popup --------------------
+function showPopup(type, title, message, onAllow, onDeny) {
+
+    permissionPopupStartTime = Date.now();
+
+    logEvent("popup_shown", {
+        title: title,
+        permissionType: type
+    });
+
+    popupOverlay.style.display = "block";
+    popupBox.style.display = "block";
+    const head = document.getElementById("popupHead");
+    const text = document.getElementById("popupText");
+    if (head) head.textContent = title;
+    if (text) text.textContent = message;
+
+    allowBtn.onclick = async () => {
+        popupOverlay.style.display = "none";
+        popupBox.style.display = "none";
+
+        logEvent("permission_answer", {
+        permissionType: type,
+        granted: true,
+        remember: rememberChk?.checked ?? false,
+        responseTime: Date.now() - permissionPopupStartTime
+      });
+
+        if (onAllow) await onAllow();
+    };
+
+    denyBtn.onclick = async () => {
+
+      logEvent("permission_answer", {
+        permissionType: type,
+        granted: false,
+        remember: rememberChk?.checked ?? false,
+        responseTime: Date.now() - permissionPopupStartTime
+      });
+      popupOverlay.style.display = "none";
+      popupBox.style.display = "none";
+      if (onDeny) await onDeny();
+    };
+}
+
+// askAllPermissions: benutzt die aktuelle Checkbox-Werte (rememberChk.checked) beim Schreiben
+async function askAllPermissions() {
+
+    await askPermission("audio");
+    await askPermission("data");
+
+}
+async function askPermission(type) {
+    // Texte für die verschiedenen Berechtigungstypen
+    const popupConfig = {
+        audio: {
+            title: "Mikrofonnutzung zulassen?",
+            message:
+                "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
+        },
+        data: {
+            title: "Datenspeicherung erlauben?",
+            message:
+                "Dein Lernfortschritt kann lokal gespeichert werden, damit du später dort weitermachen kannst, wo du aufgehört hast." +
+                "Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden.\n\n" +
+                "Möchtest du die Speicherung deines Fortschritts erlauben?",
+        },
+    };
+
+    const { title, message } = popupConfig[type];
+
+    return new Promise((resolve) => {
+
+        showPopup(
+          type,
+            title,
+            message,
+            async () => {
+                const rememberValue = rememberChk.checked;
+                await updatePermissionsInFirebase(type, true, rememberValue);
+                resolve(true);
+                
+                
+            },
+            async () => {
+                const rememberValue = rememberChk.checked;
+                await updatePermissionsInFirebase(type, false, rememberValue);
+                resolve(false);
+                
+            }
+        );
+    });
+}
+
+function shuffle(array) {
+  let currentIndex = array.length, randomIndex;
+  while (currentIndex !== 0) {
+    randomIndex = Math.floor(Math.random() * currentIndex);
+    currentIndex--;
+    [array[currentIndex], array[randomIndex]] = [
+      array[randomIndex], array[currentIndex]
+    ];
+  }
+  return array;
+}
+
+async function initPuzzle() {
+
+    endPermissionTime = Date.now();
+    puzzleTime = Date.now();
+    pulseMic(audioPermission.granted)
+    
+    startBtn.style.display = "none";
+    ss.style.display="none";
+    gameBox.style.display = "block";
+    question.style.display = "block";
+    answers.style.display = "block";
+    
+    
+    loadQuestion();
+}
+
+function loadQuestion() {
+
+let questionText=document.getElementById("questionText")
+loadBtn.style.display = "inline-block";
+  if (currentQuestion >= questions.length) {
+    checkSolved();
+    
+    return;
+  }
+  const q = questions[currentQuestion];
+  questionText.textContent=q.q
+  ans1.textContent=q.answers[0]
+  ans2.textContent=q.answers[1]
+
+}
+
+async function handleAnswer(ans,index) {
+  
+  const task = questions[currentQuestion];
+  const correct = index === task.correct;
+
+  if (correct) {
+    score++;
+    statusText.textContent = "Richtig!";
+  } else {
+
+    logEvent("error", {
+        type: "wrong_answer",
+        question: currentQuestion,
+        chosen: index,
+        correctAnswer: task.correct
+    });
+
+    statusText.textContent = "Falsch!";
+    if(ans=="1"){
+      ans1.classList.add("wrong")
+      setTimeout(()=>ans1.classList.remove("wrong"),300)
+    }
+    else if(ans=="2"){
+      ans2.classList.add("wrong")
+      setTimeout(()=>ans2.classList.remove("wrong"),500)
+    }
+  }
+
+  logEvent("task_completed", {
+    question: currentQuestion,
+    duration: Date.now() - taskStartTime
+  });
+  
+  currentQuestion++;
+  showSyncNotice();
+  if (dataPermission.granted) {
+    await set(stateRef, {
+        currentQuestion,
+        score
+    });
+    
+}
+  setTimeout(()=>loadQuestion(),300)
+}
+
+ans1.addEventListener("click", () => handleAnswer("1",0));
+ans2.addEventListener("click", () => handleAnswer("2",1));
+// -------------------- Check Solved --------------------
+async function checkSolved() {
+
+    const endTime = Date.now();
+    const permissonDuration = ((endPermissionTime - taskStartTime) / 1000).toFixed(2);
+    const overallDuration = ((endTime - overallTime) / 1000).toFixed(2);
+    const puzzleDuration = ((endTime - puzzleTime) / 1000).toFixed(2);
+
+    // Status anzeigen
+    const statusEl = document.getElementById("status");
+    const statusText = document.getElementById("statusText");
+    const statusTime = document.getElementById("statusTime");
+    const restartBtn = document.getElementById("restartBtn");
+
+    question.style.display = "none";
+    answers.style.display = "none";
+    gameBox.style.display = "none";
+    mic.style.display="none";
+
+    statusEl.style.display = "block";
+    statusText.textContent = "Du hast alle Aufgaben erfolgreich gelöst! Du kannst das Quiz über den Neustart-Button erneut beginnen.";
+    statusTime.textContent = `Score: ${score} Punkte`;
+
+    restartBtn.addEventListener("click", restartGame);
+
+    
+
+    console.log("Puzzle solved in", puzzleDuration, "seconds");
+    console.log("Everything solved in", overallDuration, "seconds");
+    console.log("Permission solved in", permissonDuration, "seconds");
+    console.log("Everything solved with", score, "points");
+
+}
+
+async function restartGame() {
+
+    // UI zurücksetzen
+    const statusEl = document.getElementById("status");
+    const statusText = document.getElementById("statusText");
+    const statusTime = document.getElementById("statusTime");
+
+    await endStudySession();
+
+    statusEl.style.display = "none";
+    statusText.textContent = "";
+    statusTime.textContent = "";
+
+    micText.style.opacity = "0";
+    mic.style.opacity = "0";
+
+    question.style.display = "none";
+    answers.style.display = "none";
+    gameBox.style.display = "none";
+    loadBtn.style.display = "none";
+
+    ss.style.display="block";
+    startBtn.style.display = "inline-block";
+
+    if(!audioPermission.remember){
+        audioPermission.granted==false
+        await updatePermissionsInFirebase('audio', false, false);
+    }
+    if(!dataPermission.remember){
+        dataPermission.granted==false
+        await updatePermissionsInFirebase('data', false, false);
+    }
+    
+    await set(stateRef, { currentQuestion: 0, score: 0 });
+   currentQuestion = 0;
+   score = 0;
+    console.log("Spiel neu gestartet. Zurück zur Startseite.");
+}
+
+// -------------------- Reset / MotionDot --------------------
+async function resetPuzzle() {
+
+    await updatePermissionsInFirebase('audio', false, false);
+    await updatePermissionsInFirebase('data', false, false);
+    console.log("Permissions zurückgesetzt!");
+    motionDot.style.backgroundColor = "rgba(247, 179, 162, 1)";
+    setTimeout(() => motionDot.style.backgroundColor =  "rgba(255, 30, 0, 1)", 100);
+    console.log("Puzzle-State zurückgesetzt und neu gestartet!");
+}
+
+motionDot.addEventListener("click", resetPuzzle);
+// Button aktivieren
+loadBtn.addEventListener("click", loadProgressFromFirebase);
+// -------------------- Button Events --------------------
+startBtn.addEventListener("click", async () => {
+    taskStartTime = Date.now();
+    overallTime = Date.now();
+
+    await startStudySession()
+
+    // zuerst vorhandenen Stand aus Firebase laden
+    await loadExistingState();
+
+    logEvent("task_started", {
+        permissionState: {
+            audio: audioPermission,
+            data: dataPermission
+        }
+    });
+
+    if (allPermissionsDenied() || allRememberDenied()) {
+        await askAllPermissions();
+    } else if(!audioPermission.granted || !audioPermission.remember){
+        await askPermission("audio") 
+    }
+    else if(!dataPermission.granted || !dataPermission.remember){
+        await askPermission("data") 
+    } 
+    if (audioPermission.remember === true) {
+      logEvent("popup_skipped_due_to_remember", {
+          permissionType: "audio"
+      });
+    }
+    if (dataPermission.remember === true) {
+      logEvent("popup_skipped_due_to_remember", {
+          permissionType: "data"
+      });
+    }
+
+    initPuzzle();
+      
+});
+
+// remember checkbox: nur UI state, echte writes lesen aus Firebase listeners
+rememberChk.addEventListener("change", () => {
+    // optional: visual feedback if you want
+    // console.log('remember checked =', rememberChk.checked);
+});
+
+// -------------------- Init --------------------
+initPermissionListeners();
