@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>VR Puzzle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.7.0/dist/aframe.min.js"></script>
+  <script src="https://unpkg.com/aframe-environment-component@1.5.x/dist/aframe-environment-component.min.js"></script>
+  <style>
+    #status {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      font-size: 18px;
+      z-index: 10;
+      display: none;
+      color: #0f0;
+    }
+
+    /* Popup Styles */
+    #popupOverlay {
+      position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); display:none; z-index:1000;
+    }
+    #popupBox {
+      position: fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+      background: #222; padding:2rem; border-radius:1rem; box-shadow:0 8px 20px rgba(0,0,0,0.5);
+      text-align:center; display:none; z-index:1001; color: #fff;
+    }
+    #popupBox button { padding:0.5rem 1rem; margin:0 0.5rem; cursor:pointer; }
+    #popupBox label { display:block; margin-top:1rem; }
+  </style>
+</head>
+<body>
+<div id="status"></div>
+
+<a-scene background="color:#88c">
+  <a-assets>
+    <img id="puzzleTex" src="./shield.png">
+  </a-assets>
+
+  <!-- Immersive Environment -->
+  <a-entity environment="preset: default;"></a-entity>
+
+  <a-entity id="rig" position="0 1.6 4">
+    <a-camera id="cam" look-controls rayOrigin="mouse"
+        raycaster="objects: .clickable" cursor="rayOrigin: mouse">
+    </a-camera>
+  </a-entity>
+
+  <!-- Start-Permission Entity -->
+  <a-entity id="startEntity" visible="true" position="0 4 -1" class="clickable">
+    <a-plane id="startPlane" width="7" height="3" color="#fff" opacity="0.9">
+      <a-text value="Willkommen beim Puzzle!" align="center" color="#000" width="5" position="0 0.9 0.05"></a-text>
+      <a-text
+        id="startText" 
+        value="Bevor du starten kannst, braucht die Anwendung einige Berechtigungen.
+          Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.
+          Zum Zurücksetzen der Berechtigungen klicke einfach auf die Statusanzeige links oben.
+          Klicke mit dem Controller auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten."
+        align="center" color="#000" width="3.5" position="0 0 0.05">
+      </a-text>
+    </a-plane>
+    <!-- Permission Status  -->
+    <a-entity id="permDots" position="0 -0.6 0.02">
+      <a-circle id="perm_border" radius="0.08" color="#000" position="-3.4 2 0"></a-circle>
+      <a-circle id="cam-perm" class="clickable" radius="0.06" color="#f00" position="-3.4 2 0"></a-circle>
+    </a-entity>
+  </a-entity>
+
+  <!-- Startbutton -->
+  <a-entity id="permissionBtn" visible="true" position="0 3 -1" class="clickable">
+    <a-plane id="plane" width="2" height="0.4" color="#2563eb" opacity="0.9"
+      class="clickable"
+      animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
+    </a-plane>
+    <a-text id="permissionBtnText" value="Start" align="center" color="#fff" width="6" position="0 0 0.05"></a-text>
+  </a-entity>
+
+  <a-entity id="micLamp" position="-2.5 4 -1">
+    <a-sphere id="micSphere" visible="false" radius="0.03" color="#0f0" opacity="0.8" shader="flat"></a-sphere>
+    <a-text id="mictx" width=3 value="MIC" align="center" visible="false" color="#fff" position="0 -0.15 0"></a-text>
+  </a-entity>
+  <!-- Immersiver Sync-Hinweis -->
+  <a-entity id="syncNoticeVR" visible="false" position="0 5 -4.9">
+    <a-text
+      value="Fortschritt gespeichert"
+      align="center"
+      color="#fff"
+      width="2"
+      opacity="0.9"
+      position="2.5 -0.8 0.5"
+      shader="msdf">
+    </a-text>
+  </a-entity>
+
+  <a-entity 
+    id="vrLoadPuzzleBtn" 
+    position="1.5 4 -1"  
+    visible="false"
+    class="clickable"
+>
+    <a-plane
+        width="1"
+        height="0.2"
+        color="#3498db"
+        material="shader:flat"
+        position="0 0 0"
+        class ="clickable"
+        animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 400"
+        animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 400"
+    ></a-plane>
+
+    <a-text
+        value="🔄 Fortschritt laden"
+        align="center"
+        color="#fff"
+        width="2"
+        position="0 0 0.01"
+    ></a-text>
+</a-entity>
+
+
+  <!-- Gewinnanzeige -->
+  <a-plane id="puzzleWin" width="6" height="2.5" color="#111" opacity="0.7" position="0 6 -5" visible="false">
+    <a-entity id="puzzleText" text="Großartig! Du hast das Puzzle abgeschlossen! Klicke auf „Neustart“, um eine neue Runde zu starten." color="#fff" width="1" scale="0.5 0.5 0.5" position="0 0 0.2" wrap-count="20" visible="false"></a-entity>
+    <a-entity id="restartButtonVR" visible="false" position="0 -0.8 0.03" class="clickable">
+      <a-plane 
+        id="restartPlane" 
+        width="1.5" 
+        height="0.5" 
+        color="#1e90ff" 
+        opacity="0.95" 
+        shader="flat" 
+        class="clickable"
+        material="side: double">
+      </a-plane>
+      <a-text 
+        value="Neustart" 
+        align="center" 
+        color="#fff" 
+        width="4" 
+        position="0 0 0.05">
+      </a-text>
+    </a-entity>
+  </a-plane>
+
+  <!-- Puzzle-Container -->
+  <a-entity id="solutionRoot" position="1 3 -1"></a-entity>
+  <a-entity id="scrambleRoot" position="1 3 -1"></a-entity>
+
+
+<!-- Firebase-Popup -->
+<a-entity id="popup-wrapper" visible="false" position="0 4 0">
+  <a-plane id="popup-bg" width="3" height="2" color="#222" opacity="0.9" material="shader:flat" radius="0.05"></a-plane>
+  
+  <a-text 
+    id="popup-head" 
+    value=" " 
+    color="#fff" 
+    align="center" 
+    width="3" 
+    position="0 0.8 0.02">
+  </a-text>
+  <a-text 
+    id="popup-text" 
+    value=" " 
+    color="#fff" 
+    align="center" 
+    width="2" 
+    position="0 0.25 0.02">
+  </a-text>
+
+  <!-- ✅ Remember Checkbox + Label -->
+  <a-plane id="rememberBox" width="0.1" height="0.1" color="#fff" position="-0.45 -0.3 0.02" class="clickable" material="shader:flat; side:double; stroke:#fff; strokeWidth:0.01"></a-plane>
+  <a-text id="rememberLabel" value="Entscheidung merken" color="#fff" align="left" width="2" position="-0.3 -0.3 0.03"></a-text>
+  
+  <!-- ✅ Häkchen, wird per JS ein/ausgeblendet -->
+  <a-text id="rememberCheck" value="X" color="#000" align="center" width="2" position="-0.45 -0.3 0.05" visible="false"></a-text>
+
+  <!-- Buttons -->
+  <a-box id="popup-allow" class="clickable" color="#0f0" depth="0.05" height="0.3" width="0.5" position="-0.3 -0.6 0.02"></a-box>
+  <a-text value="Erlauben" align="center" color="#000" width="2" position="-0.3 -0.6 0.05"></a-text>
+
+  <a-box id="popup-deny" class="clickable" color="#f00" depth="0.05" height="0.3" width="0.5" position="0.3 -0.6 0.02"></a-box>
+  <a-text value="Ablehnen" align="center" color="#000" width="2" position="0.3 -0.6 0.05"></a-text>
+</a-entity>
+
+</a-scene>
+<script type="module" src="vr_pop_sync_state.js"></script>
+</body>
+</html>
