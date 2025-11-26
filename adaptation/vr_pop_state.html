@@ -36,25 +36,16 @@
 <a-scene background="color:#88c">
   <a-assets>
     <img id="puzzleTex" src="./shield.png">
+    <img id="return" src="./rotate-solid-full.png">
   </a-assets>
 
   <!-- Immersive Environment -->
   <a-entity environment="preset: default;"></a-entity>
 
-  <a-entity id="rig" position="0 3 8">
-    <a-camera></a-camera>
-  
-    <!-- Rechter Controller mit Laser -->
-    <a-entity 
-      laser-controls="hand: right"
-      raycaster="objects: .clickable">
-    </a-entity>
-  
-    <!-- Linker Controller mit Laser -->
-    <a-entity 
-      laser-controls="hand: left"
-      raycaster="objects: .clickable">
-    </a-entity>
+  <a-entity id="rig" position="0 1.6 4">
+    <a-camera id="cam" look-controls rayOrigin="mouse"
+        raycaster="objects: .clickable" cursor="rayOrigin: mouse">
+    </a-camera>
   </a-entity>
 
   <!-- Start-Permission Entity -->
@@ -65,17 +56,63 @@
         id="startText" 
         value="Bevor du starten kannst, braucht die Anwendung einige Berechtigungen.
           Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.
-          Zum Zurücksetzen der Berechtigungen klicke einfach auf die Statusanzeige links oben.
+          Um die Berechtigungen zu widerrufen, klicke auf die Knopf links oben neben der Statusanzeige.
           Klicke mit dem Controller auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten."
-        align="center" color="#000" width="3.5" position="0 0 0.05">
+        align="center" color="#000" font="https://cdn.aframe.io/fonts/Aileron-Semibold.fnt" charset="äöüÄÖÜß" width="3.5" position="0 0 0.05">
       </a-text>
     </a-plane>
     <!-- Permission Status  -->
     <a-entity id="permDots" position="0 -0.6 0.02">
-      <a-circle id="perm_border" radius="0.08" color="#000" position="-3.4 2 0"></a-circle>
-      <a-circle id="cam-perm" class="clickable" radius="0.06" color="#f00" position="-3.4 2 0"></a-circle>
+      <a-plane id="perm_border" width="0.16" height="0.16" color="#fff" position="-3.3 2 0"></a-plane>
+      <a-plane id="cam-perm" class="clickable" width="0.12" height="0.12" material="src: #return; color: #fff; shader:flat; transparent: true" position="-3.3 2 0.01"></a-plane>
     </a-entity>
+    <a-circle
+        id="statusAudioStart" 
+        radius="0.05" 
+        position="-3.0 1.4 0.05" 
+        material="color: gray" 
+        data-permission="audio"
+    ></a-circle>
+    <a-text 
+        id="statusAudioText" 
+        value="Mikro" 
+        color="#fff" 
+        align="center" 
+        width="2"
+        position="-3.0 1.3 0.05"
+    ></a-text>
+
+    <a-circle 
+        id="statusDataStart" 
+        radius="0.05" 
+        position="-2.7 1.4 0.05" 
+        material="color: gray" 
+        data-permission="data"
+    ></a-circle>
+    <a-text 
+        id="statusDataText" 
+        value="Daten" 
+        color="#fff" 
+        align="center" 
+        width="2"
+        position="-2.7 1.3 0.05"
+    ></a-text>
   </a-entity>
+
+  <a-sphere 
+      id="statusAudioGame" 
+      radius="0.03" 
+      position="-2.1 4 -1" 
+      material="color: gray" 
+      visible="false"
+  ></a-sphere>
+  <a-sphere 
+      id="statusDataGame" 
+      radius="0.03" 
+      position="-2 4 -1" 
+      material="color: gray" 
+      visible="false"
+  ></a-sphere>
 
   <!-- Startbutton -->
   <a-entity id="permissionBtn" visible="true" position="0 3 -1" class="clickable">
@@ -89,17 +126,17 @@
 
   <a-entity id="micLamp" position="-2.5 4 -1">
     <a-sphere id="micSphere" visible="false" radius="0.03" color="#0f0" opacity="0.8" shader="flat"></a-sphere>
-    <a-text id="mictx" width=3 value="MIC" align="center" visible="false" color="#fff" position="0 -0.15 0"></a-text>
+    <a-text id="mictx" width=2 value="MIC" align="center" visible="false" color="#fff" position="0 -0.15 0"></a-text>
   </a-entity>
   <!-- Immersiver Sync-Hinweis -->
-  <a-entity id="syncNoticeVR" visible="false" position="0 5 -4.9">
+  <a-entity id="syncNoticeVR" visible="false" position="1.5 4 -1">
     <a-text
       value="Fortschritt gespeichert"
       align="center"
       color="#fff"
-      width="2"
+      width="1.5"
       opacity="0.9"
-      position="2.5 -0.8 0.5"
+      position="0 0.2 0"
       shader="msdf">
     </a-text>
   </a-entity>
@@ -132,7 +169,7 @@
 
 
   <!-- Gewinnanzeige -->
-  <a-plane id="puzzleWin" width="6" height="2.5" color="#111" opacity="0.7" position="0 6 -5" visible="false">
+  <a-plane id="puzzleWin" width="6" height="2.5" color="#111" opacity="0.7" position="0 6 -1" visible="false">
     <a-entity id="puzzleText" text="Großartig! Du hast das Puzzle abgeschlossen! Klicke auf „Neustart“, um eine neue Runde zu starten." color="#fff" width="1" scale="0.5 0.5 0.5" position="0 0 0.2" wrap-count="20" visible="false"></a-entity>
     <a-entity id="restartButtonVR" visible="false" position="0 -0.8 0.03" class="clickable">
       <a-plane 
@@ -189,17 +226,14 @@
   <a-text id="rememberCheck" value="X" color="#000" align="center" width="2" position="-0.45 -0.3 0.05" visible="false"></a-text>
 
   <!-- Buttons -->
-  <a-box id="popup-allow" class="clickable" color="#0f0" depth="0.05" height="0.3" width="0.5" position="-0.3 -0.6 0.02"></a-box>
-  <a-text value="Erlauben" align="center" color="#000" width="2" position="-0.3 -0.6 0.05"></a-text>
+  <a-box id="popup-allow" class="clickable" color="#0f0" depth="0.05" height="0.2" width="0.5" position="0.3 -0.6 0.02"></a-box>
+  <a-text value="Erlauben" align="center" color="#000" width="2" position="0.3 -0.6 0.05"></a-text>
 
-  <a-box id="popup-deny" class="clickable" color="#f00" depth="0.05" height="0.3" width="0.5" position="0.3 -0.6 0.02"></a-box>
-  <a-text value="Ablehnen" align="center" color="#000" width="2" position="0.3 -0.6 0.05"></a-text>
+  <a-box id="popup-deny" class="clickable" color="#f00" depth="0.05" height="0.2" width="0.5" position="-0.3 -0.6 0.02"></a-box>
+  <a-text value="Ablehnen" align="center" color="#000" width="2" position="-0.3 -0.6 0.05"></a-text>
 </a-entity>
 
 </a-scene>
 <script type="module" src="vr_pop_sync_state.js"></script>
 </body>
-
 </html>
-
-
