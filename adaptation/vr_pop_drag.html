@@ -15,51 +15,43 @@ AFRAME.registerComponent('piece-grab-visualizer', {
         this.grabbedEl = null;
         this.controller = this.el; 
         this.initialParent = null;
+        // Referenz zur Kamera-Entität holen
         this.cameraEl = document.getElementById('cam'); 
 
+        // Listener für die Events von Super-Hands
         this.controller.addEventListener('grab-start', this.onGrabStart.bind(this));
         this.controller.addEventListener('grab-end', this.onGrabEnd.bind(this));
     },
 
     onGrabStart: function (e) {
         const hitEl = e.detail.target;
-        
-        if (hitEl && hitEl.classList.contains('draggable') && !this.grabbedEl) {
-            
-            // 1. Look-Controls DEAKTIVIEREN, um Kamerabewegung zu verhindern
-            if (this.cameraEl) {
-                this.cameraEl.setAttribute('look-controls', 'enabled', false);
-            }
-            
+
+        // Nur fortfahren, wenn das getroffene Element ein Puzzleteil (draggable) ist
+        if (hitEl.classList.contains('draggable')) {
             this.grabbedEl = hitEl;
             this.initialParent = hitEl.parentNode;
-            
-            // 2. NEU & WICHTIG: Das Objekt an den Controller binden
-            // THREE.js' attach() sorgt dafür, dass die Weltposition beibehalten wird.
-            this.controller.object3D.attach(this.grabbedEl.object3D);
 
-            // 3. Optional: Leichten Offset vor dem Controller setzen
-            // (Das Teil springt sonst genau auf den Nullpunkt des Controllers)
-            this.grabbedEl.object3D.position.set(0, 0, -0.15); 
+            // 1. Das Element visuell an den Controller binden (THREE.js Attach)
+            this.controller.object3D.attach(hitEl.object3D);
+
+            // 2. WICHTIG: Look-Controls der Kamera deaktivieren!
+            if (this.cameraEl && this.cameraEl.components['look-controls']) {
+                this.cameraEl.setAttribute('look-controls', 'enabled', false);
+            }
         }
     },
 
     onGrabEnd: function (e) {
         if (!this.grabbedEl) return;
+
+        // 1. Element zurück an seinen ursprünglichen Elternknoten binden
+        this.initialParent.object3D.attach(this.grabbedEl.object3D);
         
-        // 1. Look-Controls REAKTIVIEREN
-        if (this.cameraEl) {
+        // 2. WICHTIG: Look-Controls der Kamera wieder aktivieren!
+        if (this.cameraEl && this.cameraEl.components['look-controls']) {
             this.cameraEl.setAttribute('look-controls', 'enabled', true);
         }
 
-        // 2. NEU & WICHTIG: Objekt zurück zum ursprünglichen Parent (#scrambleRoot) binden
-        // Die letzte Weltposition, zu der es bewegt wurde, wird beibehalten.
-        this.initialParent.object3D.attach(this.grabbedEl.object3D);
-        
-        // Hinweis: Die Logik in vr_pop_drag.js entscheidet, ob das Teil 
-        // erfolgreich platziert wird (und dann visible="false" gesetzt wird)
-        // oder ob es an seiner Loslassposition verbleibt.
-        
         this.grabbedEl = null;
         this.initialParent = null;
     }
@@ -112,23 +104,38 @@ AFRAME.registerComponent('piece-grab-visualizer', {
   <!-- Immersive Environment -->
   <a-entity environment="preset: default;"></a-entity>
 
-  <a-entity id="rig" position="0 1.6 4">
-    <a-camera></a-camera>
+  <a-entity id="rig" position="0 1.6 0">
+    
+    <a-camera id="cam" 
+        look-controls 
+        raycaster="objects: .clickable, .draggable, .slot" 
+        cursor="rayOrigin: mouse">
+    </a-camera>
 
-    <a-entity id="rightHand"
-        laser-controls="hand: right"
-        raycaster="objects: .clickable, .draggable, .slot"
+    <a-entity id="rightHand" 
+        // 1. Controller-Visualisierung und Bewegung
+        laser-controls="hand: right" 
+        hand-controls="hand: right"
+        
+        // 2. Super-Hands-Komponente: Aktiviert das Greifen mit den VR-Buttons
         super-hands="grabStartButtons: triggerdown, gripdown; grabEndButtons: triggerup, gripup;"
-        piece-grab-visualizer> 
-      </a-entity>
+        
+        // 3. Ihre Custom-Komponente: Erstellt die visuelle Bindung des Puzzleteils
+        piece-grab-visualizer
+        
+        // 4. Raycaster: Muss wissen, welche Objekte gegriffen werden können
+        raycaster="objects: .draggable, .slot, .clickable; far: 5"> 
+    </a-entity>
+    
+    <a-entity id="leftHand" 
+        laser-controls="hand: left" 
+        hand-controls="hand: left"
+        super-hands="grabStartButtons: triggerdown, gripdown; grabEndButtons: triggerup, gripup;"
+        piece-grab-visualizer
+        raycaster="objects: .draggable, .slot, .clickable; far: 5"> 
+    </a-entity>
 
-    <a-entity id="leftHand"
-        laser-controls="hand: left"
-        raycaster="objects: .clickable, .draggable, .slot"
-        super-hands="grabStartButtons: triggerdown, gripdown; grabEndButtons: triggerup, gripup;"
-        piece-grab-visualizer> 
-      </a-entity>
-  </a-entity>
+</a-entity>
   <!-- Start-Permission Entity -->
   <a-entity id="startEntity" visible="true" position="0 4 -1" class="clickable">
     <a-plane id="startPlane" width="7" height="3" color="#fff" opacity="0.9">
@@ -319,4 +326,5 @@ AFRAME.registerComponent('piece-grab-visualizer', {
 </body>
 
 </html>
+
 
