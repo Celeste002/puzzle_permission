@@ -8,12 +8,13 @@
     body {
       margin: 0;
       font-family: "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+      background: rgb(139, 172, 231);
       height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
     }
+    
     .start-box {
       background: rgba(255, 255, 255, 0.9);
       padding: 2rem 3rem;
@@ -71,7 +72,7 @@
     .answer.wrong { background-color: #f87171; }
     #status {
       position: fixed;
-      top: 400px;
+      top: 200px;
       left: 50%;
       transform: translateX(-50%);
       display: none;
@@ -154,8 +155,8 @@
       position: fixed;
       left: 10px;
       top: 10px;
-      width: 20px;
-      height: 20px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background-color: #f00;
       box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
@@ -164,10 +165,10 @@
     }
     #micText{
       position: fixed;
-      left: 35px;
-      top: 5px;
+      left: 5px;
+      top: 30px;
       color: white;
-      font-size: 20px;
+      font-size: 10px;
       font-family: system-ui, sans-serif;
       text-shadow: 0 0 5px rgba(0,0,0,0.6);
       opacity: 0;
@@ -189,44 +190,75 @@
     }
     #loadProgressBtn:hover { transform: scale(1.02); }
 
-     #permissionStatus {
-      position: static;
-      top: 20px;
-      left: 5%;
+     /* Container für Statusanzeige */
+    #permissionStatus {
+      
       display: flex;
       gap: 12px;
       align-items: center;
       z-index: 2100;
     }
-
-    /* perm-dot */
-    .perm-dot {
-      width: 14px;
-      height: 14px;
-      border-radius: 50%;
-      background-color: #ef4444;
-      box-shadow: 0 0 6px rgba(0,0,0,0.15);
-      cursor: pointer;
-      position: relative;
-      display: inline-block;
-      transition: transform .12s ease, box-shadow .12s ease;
+    .perm-indicator {
+    display: flex;             
+    flex-direction: column;    
+    align-items: center;       
     }
-    .perm-dot.allowed { background: #1eb910; box-shadow: 0 0 10px rgba(16,185,129,0.6); }
-    .perm-dot:hover { transform: scale(1.12); }
-    .perm-dot:hover::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: -34px;
-      background: rgba(0,0,0,0.85);
-      color: #fff;
-      font-size: 12px;
-      padding: 6px 8px;
-      border-radius: 6px;
-      white-space: nowrap;
-      z-index: 2300;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    .perm-label {
+    margin-top: 5px;         
+    font-size: 0.1;        
+    color: #555;
+    text-align: center;
+  }
+    .game-indicator { 
+        position: absolute;
+        top: 10px;         
+        left: 95px;  
+        gap: 5px;       
+        display: flex;
+        flex-direction: column; 
+        align-items: center;    
+    }
+    #solvedTasksDisplay { 
+        position: absolute;
+        top: 10px;         
+        left: 50%;  
+        transform: translateX(-50%);
+        display: flex;        
+        align-items: center;    
+    }
+
+    .perm-dot {
+      position: static;
+      top: 20px;
+      left: 5%;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background-color: #f00;
+      transition: all 0.3s ease;
+    }
+    .perm-dot-game {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f00; 
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .perm-label-game { 
+        margin-top: 5px;
+        font-size: 0.5rem; 
+        color: #333;
+        text-align: center;
+    }
+
+    .perm-dot.allowed {
+      background-color: #0f0;
+      box-shadow: 0 0 10px #0f0;
+    }
+    .perm-dot-game.allowed {
+      background-color: #0f0;
+      box-shadow: 0 0 10px #0f0;
     }
     
     .restart-btn {
@@ -254,14 +286,24 @@
     <div class="container_screen">
       <div class="start-box">
         <div id="permissionStatus">
-          <button id="motionDot" class="perm-dot" data-tooltip="Berechtigung zurücksetzen"></button>
+            <button id="motionDot" class="clickable" style="position:relative; bottom: 25px;color: #fff;border: none;width: 18px;height: 18px;border-radius: 50%; cursor: pointer;" data-tooltip="Berechtigung zurücksetzen">
+            <img src="./rotate-solid-full.png" style="width: 18px; height: 18px; position: relative; right: 6px;"></img>
+          </button>   
+          <div class="perm-indicator">
+              <circle id="audioDot" class="perm-dot" ></circle>
+              <p class="perm-label">Mikro</p>
+          </div>
+          
+          <div class="perm-indicator">
+              <circle id="dataDot" class="perm-dot" ></circle>
+              <p class="perm-label">Daten</p>
+          </div>     
         </div>
         
         <h1>Willkommen zum Mathe-Quiz!</h1>
-        <p>
-          Bevor du starten kannst, benötigt die Anwendung einige Berechtigungen.<br>
+        <p>Bevor du starten kannst, braucht die Anwendung einige Berechtigungen.<br>
           Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.<br>
-          Zum Zurücksetzen der Berechtigungen drücke einfach auf die Statusanzeige links oben.<br>
+          Um die Berechtigungen zu widerrufen, klicke auf die Knopf links oben neben der Statusanzeige.<br>
           Klicke auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten.
         </p>
 
@@ -272,6 +314,17 @@
   </div>
   
   <div id="gameBox">
+    <div id="solvedTasksDisplay">
+      <p id="solvedTasksText">Aufgabe: 0 / X</p>
+    </div>
+    <div class="game-indicator" style="left:60px">
+          <circle id="audioDotGame" class="perm-dot-game" ></circle>
+          <p class="perm-label-game">Mikro</p>
+      </div>
+      <div class="game-indicator">
+          <circle id="dataDotGame" class="perm-dot-game" ></circle>
+          <p class="perm-label-game">Daten</p>
+      </div>
     <button id="loadProgressBtn" style="display:none;">🔄 Fortschritt laden</button>
     <div id="question" style="display:none;">
       <p id="questionText"></p>
@@ -286,8 +339,8 @@
 
   <!-- Das Mikrofon-Symbol -->
     <div id="micStatus">
-      <div id="micReminder" display="none"></div>
-      <span id="micText" display="none">MIC</span>
+      <div id="micReminder"></div>
+      <span id="micText" >MIC</span>
     </div>
 
     <div id="syncNotice">
@@ -309,10 +362,11 @@
     <p id="popupText">Diese Anwendung kann deinen aktuellen Puzzle-Fortschritt speichern, damit du später an derselben Stelle weitermachen kannst. Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden. Möchtest du die Speicherung deines Fortschritts erlauben?</p>
     <label><input type="checkbox" id="rememberChk"> Entscheidung merken</label>
     <div style="margin-top:1rem;">
-      <button id="allowBtn">Erlauben</button>
       <button id="denyBtn">Ablehnen</button>
+      <button id="allowBtn">Erlauben</button>
     </div>
   </div>
 
 </body>
 </html>
+
