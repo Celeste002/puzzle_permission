@@ -10,7 +10,7 @@ import { ref, onValue, set, get, push } from './lib/firebase-database.js';
  */
 const CONFIG = {
     PUZZLE: {
-        IMAGE: "#puzzleTex", // A-Frame Asset ID
+        IMAGE: "./shield.png",
         COLS: 3,
         ROWS: 3,
         get TOTAL_PIECES() { return this.COLS * this.ROWS; }
@@ -19,14 +19,14 @@ const CONFIG = {
         audio: {
             title: "Mikrofonzugriff erlauben?",
             message:
-                "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
+                "Diese Anwendung nutzt dein Mikrofon, um Audiofeedback zuzulassen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
         },
         data: {
             title: "Datenspeicherung erlauben?",
             message:
-                "Diese Anwendung kann deinen Puzzle-Fortschritt speichern, damit du später weiterspielen kannst.\n" +
-                "Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden.\n\n" +
-                "Möchtest du die Speicherung deines Fortschritts erlauben?",
+                "Diese Anwendung kann deinen Puzzle-Fortschritt speichern, damit du zu einem anderen Zeitpunkt weiterspielen kannst.\n" +
+                "Die Daten werden nicht an Dritte weitergegeben und sind jederzeit mit den Reset-Button widerrufbar.\n\n" +
+                "Magst du die Speicherung deines Fortschritts erlauben?",
         },
     }
 };
@@ -54,6 +54,10 @@ const DOM = {
     restartButton: document.getElementById("restartButtonVR"),
     popupHead: document.getElementById("popup-head"),
     popupText: document.getElementById("popup-text"),
+    statusAudioStart: document.getElementById('statusAudioStart'),
+    statusDataStart: document.getElementById('statusDataStart'), 
+    statusAudioGame: document.getElementById('statusAudioGame'), 
+    statusDataGame: document.getElementById('statusDataGame'),     
 };
 
 
@@ -151,6 +155,32 @@ async function endStudySession() {
 // =========================================================================
 
 /**
+ * Aktualisiert die Farbe und Sichtbarkeit der Status-Indikatoren (Ampel-Logik).
+ */
+function updatePermissionIndicators() {
+    
+    const audioGranted = STATE.audioPermission.granted;
+    const dataGranted = STATE.dataPermission.granted;
+
+    const audioColor = audioGranted ? 'green' : 'red';
+    const dataColor = dataGranted ? 'green' : 'red';
+    
+    // 1. Startbildschirm-Indikatoren (Groß)
+    DOM.statusAudioStart.setAttribute('material', 'color', audioColor);
+    DOM.statusDataStart.setAttribute('material', 'color', dataColor);
+    
+    // 2. In-Game-Indikatoren (Klein)
+    DOM.statusAudioGame.setAttribute('material', 'color', audioColor);
+    DOM.statusDataGame.setAttribute('material', 'color', dataColor);
+    
+    // Stellen Sie sicher, dass die In-Game Indikatoren sichtbar sind, wenn das Spiel startet
+    if (DOM.statusAudioGame.getAttribute('visible') === 'false') {
+        DOM.statusAudioGame.setAttribute('visible', 'true');
+        DOM.statusDataGame.setAttribute('visible', 'true');
+    }
+}
+
+/**
  * Zeigt die Synchronisations-Benachrichtigung in VR an.
  */
 function showSyncNoticeVR(msg="Fortschritt gespeichert") {
@@ -164,7 +194,7 @@ function showSyncNoticeVR(msg="Fortschritt gespeichert") {
   notice.removeAttribute("animation__pulse");
   notice.setAttribute("animation__pulse", {
     property: "scale",
-    to: "1 1 1.5",
+    to: "1 1 1.1",
     dir: "alternate",
     dur: 300,
     loop:1,
@@ -187,7 +217,15 @@ function pulseMic(active) {
       property: "scale",
       to: "0 0 0",
       dir: "alternate",
-      dur: 600,
+      dur: 800,
+      loop: true,
+      easing: "easeInOutSine"
+    });
+    DOM.micTx.setAttribute("animation__pulse", {
+      property: "scale",
+      to: "0 0 0",
+      dir: "alternate",
+      dur: 800,
       loop: true,
       easing: "easeInOutSine"
     });
@@ -349,6 +387,7 @@ function onSlotClick(e) {
     } else {
         // Falsche Position
         STATE.errors++;
+        savePuzzleStateVR();
         logEvent("error", {
           type: "wrong_answer",
           error_nbr: STATE.errors,
@@ -409,6 +448,7 @@ async function savePuzzleStateVR(additionalPayload = {}) {
     const payload = { 
       boardState: STATE.boardState, 
       unplacedPieces: STATE.unplacedPieces,
+      errors: STATE.errors,
       solved: STATE.boardState.every((val, idx) => val === idx),
       timestamp: Date.now(), 
       source: CLIENT_ID,
@@ -446,6 +486,7 @@ function applyRemoteStateIfNewerVR(remote) {
     
     // 1. Board State und unplacedPieces aktualisieren
     STATE.boardState = coerceBoardState(remote.boardState, totalPieces);
+    STATE.errors = remote.errors;
 
     if (Array.isArray(remote.unplacedPieces)) {
         STATE.unplacedPieces = remote.unplacedPieces.slice();
@@ -488,6 +529,7 @@ function initPermissionListeners() {
     perm.granted = val.granted;
     perm.remember = val.remember;
 
+    updatePermissionIndicators();
     DOM.statusCam.removeAttribute('animation__pulse');
     DOM.statusCam.setAttribute('color', val?.granted ? '#0f0' : '#f00');
     DOM.statusCam.setAttribute('animation__pulse', {
@@ -499,7 +541,7 @@ function initPermissionListeners() {
         easing: 'easeInOutQuad'
     });
   };
-
+  
   onValue(audioRef, snap => handlePermissionChange("audio", snap.val()));
   onValue(dataRef,  snap => handlePermissionChange("data", snap.val()));
 }
@@ -557,6 +599,14 @@ function showPopup(type,title, message, onAllow, onDeny) {
 
 async function askPermission(type) {
   const { title, message } = CONFIG.POPUP_TEXTS[type];
+
+  // 1. Logik-Variable zurücksetzen (muss für jedes Popup neu gesetzt werden)
+    STATE.rememberSelection = false; 
+    
+    // 2. Visuelles Element zurücksetzen (Häkchen unsichtbar machen)
+    if (DOM.rememberCheck) {
+        DOM.rememberCheck.setAttribute('visible', 'false'); 
+    }
 
   return new Promise((resolve) => {
     showPopup(
@@ -652,19 +702,24 @@ async function startGame() {
       const order = [...Array(totalPieces).keys()].sort(() => Math.random() - 0.5);
       STATE.boardState.fill(null);
       STATE.unplacedPieces = order;
+      DOM.statusAudioGame.setAttribute('visible', 'true');
+      DOM.statusDataGame.setAttribute('visible', 'true');
+      updatePermissionIndicators();
       renderVRPuzzleState(); // Render mit neu initialisiertem Zustand
       if(STATE.dataPermission.granted) {
           // Gesamtstartzeit mitspeichern
           await savePuzzleStateVR({ puzzleStartTime: STATE.overallTime }); 
       }
   } else {
-       renderVRPuzzleState(); 
+        DOM.statusAudioGame.setAttribute('visible', 'true');
+        DOM.statusDataGame.setAttribute('visible', 'true');
+        updatePermissionIndicators();
+        renderVRPuzzleState(); 
   }
 
   if(STATE.audioPermission.granted){
     DOM.micTx.setAttribute("visible","true")
     DOM.mic.setAttribute("visible","true")
-    setTimeout(() => DOM.micTx.setAttribute("visible","false"), 2000);
   }
 }
 
@@ -687,6 +742,8 @@ async function restartVRPuzzle() {
   DOM.plane.classList.add("clickable"); 
   DOM.allowBtn.classList.add("clickable"); 
   DOM.denyBtn.classList.add("clickable"); 
+  DOM.statusAudioGame.setAttribute('visible', 'false');
+    DOM.statusDataGame.setAttribute('visible', 'false');
   
   // 2. Study Session beenden
   await endStudySession();
@@ -694,10 +751,12 @@ async function restartVRPuzzle() {
   // 3. Permissions zurücksetzen, wenn "Merken" nicht aktiv war
   if(!STATE.audioPermission.remember){
       STATE.audioPermission.granted = false; 
+      updatePermissionIndicators();
       await updatePermissionsInFirebase('audio', false, false);
   }
   if(!STATE.dataPermission.remember){
       STATE.dataPermission.granted = false; 
+      updatePermissionIndicators();
       await updatePermissionsInFirebase('data', false, false);
   }
 
