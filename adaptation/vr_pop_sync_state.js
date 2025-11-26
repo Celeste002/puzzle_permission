@@ -35,6 +35,7 @@ const CONFIG = {
  * DOM-Elemente zur einfachen Referenzierung in A-Frame.
  */
 const DOM = {
+    gamezone: document.getElementById('gamezone'),
     permissionBtn: document.getElementById('permissionBtn'),
     plane: document.getElementById('plane'),
     startEntity: document.getElementById('startEntity'),
@@ -247,6 +248,7 @@ function checkSolved() {
 
     DOM.puzzleText.setAttribute("text",{value:`Geschafft! Du hast \n⏱ ${STATE.errors} Fehler gemacht!`, align:"center", color:"#fff", width:8, wrapCount:30});
     DOM.puzzleText.setAttribute("visible","true");
+    DOM.gamezone.setAttribute("visible", "false");
     DOM.winBox.setAttribute("visible","true");
     DOM.restartButton.setAttribute("visible", "true");
     DOM.winBox.setAttribute("animation__pulse",{property:"scale", dir:"alternate", dur:1000, easing:"easeInOutSine", loop:true, to:"1.1 1.1 1"});
@@ -672,6 +674,7 @@ async function startGame() {
   DOM.denyBtn.classList.remove("clickable");
   DOM.startEntity.setAttribute("visible", "false");
   DOM.vrLoadBtn.setAttribute("visible", true);
+    DOM.gamezone.setAttribute("visible", "true");
   
   // Zustand prüfen / laden / initialisieren (EINMALIGER GET-AUFRUF!)
   const snap = await get(PUZZLE_REF);
