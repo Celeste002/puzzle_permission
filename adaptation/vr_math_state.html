@@ -44,9 +44,19 @@
   <a-entity environment="preset: default;"></a-entity>
 
   <a-entity id="rig" position="0 1.6 4">
-    <a-camera id="cam" look-controls rayOrigin="mouse"
-        raycaster="objects: .clickable" cursor="rayOrigin: mouse">
-    </a-camera>
+    <a-camera></a-camera>
+  
+    <!-- Rechter Controller mit Laser -->
+    <a-entity 
+      laser-controls="hand: right"
+      raycaster="objects: .clickable">
+    </a-entity>
+  
+    <!-- Linker Controller mit Laser -->
+    <a-entity 
+      laser-controls="hand: left"
+      raycaster="objects: .clickable">
+    </a-entity>
   </a-entity>
 
   <!-- Start-Permission Entity -->
@@ -265,3 +275,4 @@
 <script type="module" src="vr_math_state.js"></script>
 </body>
 </html>
+
