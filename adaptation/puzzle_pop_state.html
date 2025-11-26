@@ -8,11 +8,21 @@
     body {
       margin: 0;
       font-family: "Segoe UI", Roboto, sans-serif;
-      background: linear-gradient(135deg, #74ebd5 0%, #9face6 100%);
+      background: rgb(139, 172, 231);
       height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .game {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+      background: #f8f8f8;
+      border-radius: 1rem;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      position: relative; 
     }
 
     .start-box {
@@ -164,13 +174,31 @@
 
     /* Container für Statusanzeige */
     #permissionStatus {
-      position: static;
-      top: 20px;
-      left: 5%;
+      
       display: flex;
       gap: 12px;
       align-items: center;
       z-index: 2100;
+    }
+    .perm-indicator {
+    display: flex;             
+    flex-direction: column;    
+    align-items: center;       
+    }
+    .perm-label {
+    margin-top: 5px;         
+    font-size: 0.1;        
+    color: #555;
+    text-align: center;
+  }
+    .game-indicator { 
+        position: absolute;
+        top: 10px;         
+        left: 95px;  
+        gap: 5px;       
+        display: flex;
+        flex-direction: column; 
+        align-items: center;    
     }
     #syncNotice {
       position: absolute;
@@ -188,8 +216,8 @@
       position: fixed;
       left: 10px;
       top: 10px;
-      width: 20px;
-      height: 20px;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background-color: #f00;
       box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
@@ -198,10 +226,10 @@
     }
     #micText{
       position: fixed;
-      left: 35px;
-      top: 5px;
+      left: 8px;
+      top: 20px;
       color: white;
-      font-size: 20px;
+      font-size: 10px;
       font-family: system-ui, sans-serif;
       text-shadow: 0 0 5px rgba(0,0,0,0.6);
       opacity: 0;
@@ -221,36 +249,40 @@
       z-index: 2100;
     }
     #loadProgressBtn:hover { transform: scale(1.02); }
-
-
     .perm-dot {
-      width: 14px;
-      height: 14px;
+      position: static;
+      top: 20px;
+      left: 5%;
+      width: 10px;
+      height: 10px;
       border-radius: 50%;
       background-color: #f00;
-      position: relative;
-      cursor: pointer;
       transition: all 0.3s ease;
+    }
+    .perm-dot-game {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background-color: #f00; 
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    .perm-label-game { 
+        margin-top: 5px;
+        font-size: 0.5rem; 
+        color: #333;
+        text-align: center;
     }
 
     .perm-dot.allowed {
       background-color: #0f0;
       box-shadow: 0 0 10px #0f0;
     }
-
-    .perm-dot:hover::after {
-      content: attr(data-tooltip);
-      position: absolute;
-      bottom: 22px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(0,0,0,0.85);
-      color: #fff;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      white-space: nowrap;
+    .perm-dot-game.allowed {
+      background-color: #0f0;
+      box-shadow: 0 0 10px #0f0;
     }
+
     .restart-btn {
       background: #4a90e2;
       border: none;
@@ -282,18 +314,31 @@
 </head>
 <body>
 
+
   <!-- Start Screen -->
   <div id="startScreen">
     <div class="container_screen">
       <div class="start-box">
         <div id="permissionStatus">
-          <button id="motionDot" class="perm-dot" data-tooltip="Berechtigung zurücksetzen"></button>
+          <button id="motionDot" class="clickable" style="position:relative; bottom: 25px;color: #fff;border: none;width: 18px;height: 18px;border-radius: 50%; cursor: pointer;" data-tooltip="Berechtigung zurücksetzen">
+            <img src="./rotate-solid-full.png" style="width: 18px; height: 18px; position: relative; right: 6px;"></img>
+          </button>
+          <div class="perm-indicator">
+              <circle id="audioDot" class="perm-dot" ></circle>
+              <p class="perm-label">Audio</p>
+          </div>
+          
+          <div class="perm-indicator">
+              <circle id="dataDot" class="perm-dot" ></circle>
+              <p class="perm-label">Daten</p>
+          </div>
+          
         </div>
         
         <h1>Willkomen zum Puzzle!</h1>
-        <p>Bevor du starten kannst, benötigt die Anwendung einige Berechtigungen.<br>
+        <p>Bevor du starten kannst, braucht die Anwendung einige Berechtigungen.<br>
           Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.<br>
-          Zum Zurücksetzen der Berechtigungen drücke einfach auf die Statusanzeige links oben.<br>
+          Um die Berechtigungen zu widerrufen, klicke auf die Knopf links oben neben der Statusanzeige.<br>
           Klicke auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten.
         </p>
 
@@ -306,6 +351,14 @@
   <!-- Game Screen -->
   <div id="game" style="display:none;">
     <div class="container">
+      <div class="game-indicator" style="left:60px">
+          <circle id="audioDotGame" class="perm-dot-game" ></circle>
+          <p class="perm-label-game">Mikro</p>
+      </div>
+      <div class="game-indicator">
+          <circle id="dataDotGame" class="perm-dot-game" ></circle>
+          <p class="perm-label-game">Daten</p>
+      </div>
       <div>
         <h3>Puzzleteile</h3>
         <div class="pieces" id="pieces"></div>
@@ -344,8 +397,8 @@
     <p id="popupText">Diese Anwendung kann deinen aktuellen Puzzle-Fortschritt speichern, damit du später an derselben Stelle weitermachen kannst. Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden. Möchtest du die Speicherung deines Fortschritts erlauben?</p>
     <label><input type="checkbox" id="rememberChk"> Entscheidung merken</label>
     <div style="margin-top:1rem;">
-      <button id="allowBtn">Allow</button>
-      <button id="denyBtn">Deny</button>
+      <button id="denyBtn">Ablehnen</button>
+      <button id="allowBtn">Erlauben</button>
     </div>
   </div>
 
