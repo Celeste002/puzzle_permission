@@ -117,22 +117,16 @@ AFRAME.registerComponent('piece-grab-visualizer', {
 </a-camera>
 
     <a-entity id="rightHand"
-        cursor="rayOrigin: mouse"
-        rayOrigin="mouse"
         laser-controls="hand: right"
         raycaster="objects: .clickable, .draggable, .slot"
         super-hands="grabStartButtons: triggerdown, gripdown; grabEndButtons: triggerup, gripup;"
-        hand-controls="hand: right"
         piece-grab-visualizer> 
       </a-entity>
 
     <a-entity id="leftHand"
-        cursor="rayOrigin: mouse"
-        rayOrigin="mouse"
         laser-controls="hand: left"
         raycaster="objects: .clickable, .draggable, .slot"
         super-hands="grabStartButtons: triggerdown, gripdown; grabEndButtons: triggerup, gripup;"
-        hand-controls="hand: left"
         piece-grab-visualizer> 
       </a-entity>
 </a-entity>
@@ -325,4 +319,5 @@ AFRAME.registerComponent('piece-grab-visualizer', {
 </a-scene>
 <script type="module" src="vr_pop_drag.js"></script>
 </body>
+
 </html>
