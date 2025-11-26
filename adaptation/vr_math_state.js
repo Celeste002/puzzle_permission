@@ -17,8 +17,13 @@ const allowBtn = document.getElementById('popup-allow');
 const denyBtn = document.getElementById('popup-deny');
 const rememberBox = document.getElementById('rememberBox');
 const rememberCheck = document.getElementById('rememberCheck');
+const micLamp = document.getElementById("micLamp");
 const mic = document.getElementById("micSphere");
-const micTx = document.getElementById("mictx");
+const statusAudioStart = document.getElementById('statusAudioStart');
+const statusDataStart = document.getElementById('statusDataStart'); 
+const statusAudioGame = document.getElementById('statusAudioGame'); 
+const statusDataGame = document.getElementById('statusDataGame'); 
+const solvedTasksDisplay = document.getElementById('solvedTasksDisplay');
 
 let audioPermission = { granted: false, remember: false };
 let dataPermission  = { granted: false, remember: false };
@@ -127,12 +132,17 @@ async function loadExistingState() {
 const vrLoadBtn = document.getElementById("loadProgressBtn");
 
 async function vrLoadProgress() {
+
+  if (!dataPermission.granted) {
+      showSyncNoticeVR("Laden fehlgeschlagen: Datenspeicherung nicht erlaubt.");
+      return;
+  }
     console.log("🔄 VR lädt Fortschritt...");
 
     await loadExistingState();
     loadQuestion();
     console.log("✅ VR hat Fortschritt geladen:", state);
-
+    showSyncNoticeVR("Fortschritt geladen");
     // Logging
     logEvent("manual_load", {
         questionIndex: currentQuestion,
@@ -141,8 +151,34 @@ async function vrLoadProgress() {
 }
 
 vrLoadBtn.addEventListener("click", vrLoadProgress);
+
+/**
+ * Aktualisiert die Farbe und Sichtbarkeit der Status-Indikatoren (Ampel-Logik).
+ */
+function updatePermissionIndicators() {
+    
+    const audioGranted = audioPermission.granted;
+    const dataGranted = dataPermission.granted;
+
+    const audioColor = audioGranted ? 'green' : 'red';
+    const dataColor = dataGranted ? 'green' : 'red';
+    
+    // 1. Startbildschirm-Indikatoren (Groß)
+    statusAudioStart.setAttribute('material', 'color', audioColor);
+    statusDataStart.setAttribute('material', 'color', dataColor);
+    
+    // 2. In-Game-Indikatoren (Klein)
+    statusAudioGame.setAttribute('material', 'color', audioColor);
+    statusDataGame.setAttribute('material', 'color', dataColor);
+    
+    // Stellen Sie sicher, dass die In-Game Indikatoren sichtbar sind, wenn das Spiel startet
+    if (statusAudioGame.getAttribute('visible') === 'false') {
+        statusAudioGame.setAttribute('visible', 'true');
+        statusDataGame.setAttribute('visible', 'true');
+    }
+}
 // -------------------- Helper: Sync Notice --------------------
-function showSyncNoticeVR(msg="Fortschritt gespeichert") {
+function showSyncNoticeVR(msg) {
 
   const notice = document.getElementById("syncNoticeVR");
   if (!notice) return;
@@ -173,13 +209,13 @@ function showSyncNoticeVR(msg="Fortschritt gespeichert") {
 // -------------------- Helper: Sync Notice --------------------
 function pulseMic(active) {
   console.log("Mikrofon-Pulsieren:", active);
-  if (!mic) return;
+  if (!micLamp) return;
   if (active) {
-    mic.setAttribute("animation__pulse", {
+    micLamp.setAttribute("animation__pulse", {
       property: "scale",
       to: "0 0 0",
       dir: "alternate",
-      dur: 600,
+      dur: 1000,
       loop: true,
       easing: "easeInOutSine"
     });
@@ -190,6 +226,10 @@ function pulseMic(active) {
 // 🔹 POPUP LOGIK
 // ===================================================
 function showPopup(type, title, message, onAllow, onDeny) {
+
+  remember = false;
+  rememberCheck.setAttribute("visible", remember);
+  permissionPopupStartTime = Date.now();
 
   logEvent("popup_shown", {
         title: title,
@@ -236,22 +276,18 @@ function showPopup(type, title, message, onAllow, onDeny) {
 // ===================================================
 // 🔹 PERMISSION ABFRAGEN
 // ===================================================
-async function askAllPermissions() {
-  await askPermission("audio");
-  await askPermission("data");
-}
 
 async function askPermission(type) {
   const popupConfig = {
     audio: {
       title: "Mikrofonzugriff erlauben?",
-      message: "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
+      message: "Diese Anwendung nutzt dein Mikrofon, um Audiofeedback zuzulassen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
     },
     data: {
       title: "Datenspeicherung erlauben?",
-      message: "Diese Anwendung kann deinen Quiz-Fortschritt speichern, damit du später weiterspielen kannst.\n\n" +
-               "Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden.\n\n" +
-               "Magst du die Speicherung deines Fortschritts erlauben?",
+      message: "Diese Anwendung kann deinen Quiz-Fortschritt speichern, damit du zu einem anderen Zeitpunkt weiterspielen kannst.\n" +
+                "Die Daten werden nicht an Dritte weitergegeben und sind jederzeit mit den Reset-Button widerrufbar.\n\n" +
+                "Magst du die Speicherung deines Fortschritts erlauben?",
     }
   };
 
@@ -287,7 +323,7 @@ function initPermissionListeners() {
       dataPermission.granted = val.granted;
       dataPermission.remember = val.remember;
     }
-
+    updatePermissionIndicators();
     resetBtn.removeAttribute('animation__pulse');
     resetBtn.setAttribute('color', val?.granted ? '#0f0' : '#f00');
     resetBtn.setAttribute('animation__pulse', {
@@ -334,51 +370,29 @@ plane.addEventListener("click", async (e) => {
             data: dataPermission
         }
     });
-
-    if (allPermissionsDenied() || allRememberDenied()) {
-        await askAllPermissions();
-    } else if(!audioPermission.granted || !audioPermission.remember){
+ 
+    if( !audioPermission.remember){
         await askPermission("audio") 
+    }else{
+        logEvent("popup_skipped_due_to_remember", {
+            permissionType: "audio"
+        });
     }
-    else if(!dataPermission.granted || !dataPermission.remember){
-        await askPermission("data")
-        
+    if(!dataPermission.remember){
+        await askPermission("data") 
     } 
-    
-    if (audioPermission.remember === true) {
-      logEvent("popup_skipped_due_to_remember", {
-          permissionType: "audio"
-      });
-    }
-    if (dataPermission.remember === true) {
+    else{
       logEvent("popup_skipped_due_to_remember", {
           permissionType: "data"
       });
     }
+
     pulseMic(audioPermission.granted)
     startQuiz();
 });
-function allPermissionsDenied() {
-  return !audioPermission.granted && !dataPermission.granted;
-}
-function allRememberDenied() {
-  return !audioPermission.remember && !dataPermission.remember;
-}
 // ===================================================
 // 🔹 QUIZ LOGIK
 // ===================================================
-
-function shuffle(array) {
-  let currentIndex = array.length, randomIndex;
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]
-    ];
-  }
-  return array;
-}
 
 async function startQuiz() {
 
@@ -391,17 +405,24 @@ async function startQuiz() {
 
   if(audioPermission.granted){
 
-    micTx.setAttribute("visible","true")
-    mic.setAttribute("visible","true")
-    setTimeout(() => micTx.setAttribute("visible","false"), 2000);
+    micLamp.setAttribute("visible","true")
   }
+  statusAudioGame.setAttribute('visible', 'true');
+  statusDataGame.setAttribute('visible', 'true');
+  statusAudioStart.setAttribute('visible', 'false');
+  statusDataStart.setAttribute('visible', 'false');
+  
 
+  updatePermissionIndicators();
   loadQuestion();
 }
 
 function loadQuestion() {
 
   vrLoadBtn.setAttribute("visible", true);
+
+  const value = `Aufgabe: ${currentQuestion} / ${questions.length}`;
+  solvedTasksDisplay.setAttribute('value', value);
 
   if (currentQuestion >= questions.length) {
     showResult();
@@ -441,7 +462,13 @@ function loadQuestion() {
         duration: Date.now() - taskStartTime
       });
       
-      showSyncNoticeVR();
+      if(dataPermission.granted){
+          showSyncNoticeVR("Fortschritt gespeichert");
+      }
+      else{
+            showSyncNoticeVR("Speichern fehlgeschlagen: Datenspeicherung nicht erlaubt.");
+      }
+      
       setTimeout(async () => {
         currentQuestion++;
         if (dataPermission.granted) {
@@ -450,6 +477,7 @@ function loadQuestion() {
                 score
             }); 
         }
+        
         loadQuestion();
       }, 1200);
     };
@@ -488,8 +516,7 @@ console.log("🔁 Neustart des VR-Mathe-Quiz gestartet...");
   // UI zurücksetzen
   const winBox = document.getElementById("quizWin");
   winBox.setAttribute("visible", "false");
-  micTx.setAttribute("visible","false")
-  mic.setAttribute("visible","false")
+  micLamp.setAttribute("visible","false")
   await set(stateRef, { currentQuestion: 0, score: 0 });
   currentQuestion = 0;
   score = 0;
@@ -501,13 +528,18 @@ console.log("🔁 Neustart des VR-Mathe-Quiz gestartet...");
   allowBtn.classList.add("clickable");
   denyBtn.classList.add("clickable");
   vrLoadBtn.setAttribute("visible", false);
+  statusAudioStart.setAttribute('visible', 'true');
+  statusDataStart.setAttribute('visible', 'true');
+  // Permissions zurücksetzen, wenn nicht "merken"
 
   if(!audioPermission.remember){
       audioPermission.granted==false
+      updatePermissionIndicators();
       await updatePermissionsInFirebase('audio', false, false);
   }
   if(!dataPermission.remember){
       dataPermission.granted==false
+      updatePermissionIndicators();
       await updatePermissionsInFirebase('data', false, false);
   }
 }
