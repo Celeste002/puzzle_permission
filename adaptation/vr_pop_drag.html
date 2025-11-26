@@ -113,8 +113,7 @@ AFRAME.registerComponent('piece-grab-visualizer', {
   <a-entity environment="preset: default;"></a-entity>
 
   <a-entity id="rig" position="0 1.6 4">
-    <a-camera id="cam" look-controls="enabled: false" rayOrigin="mouse" raycaster="objects: .clickable, .slot" cursor="rayOrigin: mouse">
-</a-camera>
+    <a-camera></a-camera>
 
     <a-entity id="rightHand"
         laser-controls="hand: right"
@@ -129,8 +128,7 @@ AFRAME.registerComponent('piece-grab-visualizer', {
         super-hands="grabStartButtons: triggerdown, gripdown; grabEndButtons: triggerup, gripup;"
         piece-grab-visualizer> 
       </a-entity>
-</a-entity>
-
+  </a-entity>
   <!-- Start-Permission Entity -->
   <a-entity id="startEntity" visible="true" position="0 4 -1" class="clickable">
     <a-plane id="startPlane" width="7" height="3" color="#fff" opacity="0.9">
@@ -321,3 +319,4 @@ AFRAME.registerComponent('piece-grab-visualizer', {
 </body>
 
 </html>
+
