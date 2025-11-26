@@ -17,16 +17,16 @@ const CONFIG = {
     },
     POPUP_TEXTS: {
         audio: {
-            title: "Mikrofonnutzung zulassen?",
+            title: "Mikrofonzugriff erlauben?",
             message:
-                "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
+                "Diese Anwendung nutzt dein Mikrofon, um Audiofeedback zuzulassen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
         },
         data: {
-            title: "Datenspeicherung zulassen?",
+            title: "Datenspeicherung erlauben?",
             message:
-                "Diese Anwendung kann deinen Puzzle-Fortschritt lokal auf deinem Gerät speichern, damit du später weiterspielen kannst. " +
-                "Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden.\n\n" +
-                "Möchtest du die Speicherung deines Fortschritts erlauben?",
+                "Diese Anwendung kann deinen Puzzle-Fortschritt speichern, damit du zu einem anderen Zeitpunkt weiterspielen kannst.\n" +
+                "Die Daten werden nicht an Dritte weitergegeben und sind jederzeit mit den Reset-Button widerrufbar.\n\n" +
+                "Magst du die Speicherung deines Fortschritts erlauben?",
         },
     }
 };
@@ -49,6 +49,7 @@ const DOM = {
     motionDot: document.getElementById("motionDot"),
     micReminder: document.getElementById("micReminder"),
     micText: document.getElementById("micText"),
+    micStatus: document.getElementById("micStatus"),
     loadPuzzleBtn: document.getElementById("loadPuzzleBtn"),
     status: document.getElementById("status"),
     statusText: document.getElementById("statusText"),
@@ -56,7 +57,11 @@ const DOM = {
     restartBtn: document.getElementById("restartBtn"),
     popupHead: document.getElementById("popupHead"),
     popupText: document.getElementById("popupText"),
-    syncNotice: document.getElementById('syncNotice')
+    syncNotice: document.getElementById('syncNotice'),
+    audioDot: document.getElementById('audioDot'),
+    dataDot: document.getElementById('dataDot'),
+    audioDotGame: document.getElementById('audioDotGame'),
+    dataDotGame: document.getElementById('dataDotGame'),
 };
 
 // Firebase Refs und Client-ID
@@ -262,7 +267,7 @@ function onDrop(e) {
             pieceIndex: pieceIndex,
             slotIndex: slotIndex
         });
-
+        savePuzzleState();
         e.currentTarget.classList.add("wrong");
         setTimeout(() => e.currentTarget.classList.remove("wrong"), 300);
     }
@@ -283,7 +288,7 @@ function checkSolved() {
 
     DOM.status.style.display = "block";
     DOM.statusText.textContent = "Du hast das Puzzle erfolgreich gelöst! Du kannst das Puzzle über den Neustart-Button erneut beginnen.";
-    DOM.statusTime.textContent = `Zeit: ${STATE.errors} Fehler`;
+    DOM.statusTime.textContent = ` ${STATE.errors} Fehler`;
     
     DOM.restartBtn.onclick = restartGame; // Direkte Zuweisung, vermeidet Doppel-Listener
     
@@ -322,6 +327,7 @@ async function savePuzzleState(additionalPayload = {}) {
     const payload = {
         boardState: board, // boardState verwenden
         unplacedPieces: STATE.unplacedPieces,
+        errors: STATE.errors,
         solved: STATE.boardState.every((v, i) => v === i),
         timestamp: Date.now(),
         source: CLIENT_ID,
@@ -385,6 +391,7 @@ function applyRemoteStateIfNewer(remote) {
     // Nutzen der coerceBoardState-Funktion, die garantiert, dass
     // das resultierende Array die korrekte Größe (totalPieces) hat.
     STATE.boardState = coerceBoardState(remote.boardState, totalPieces);
+    STATE.errors = remote.errors;
 
     // 2. unplacedPieces neu ableiten oder aus Remote übernehmen
     if (Array.isArray(remote.unplacedPieces)) {
@@ -467,24 +474,33 @@ function showSyncNotice(msg = "Fortschritt gespeichert") {
     setTimeout(() => el.style.display = 'none', 1200);
 }
 
+
 /**
- * Aktualisiert den visuellen Statuspunkt für die Berechtigungen.
+ * Aktualisiert die Farbe und Sichtbarkeit der Status-Indikatoren (Ampel-Logik).
  */
-function updatePermissionDotCombined() {
-    const bothGranted = STATE.audioPermission.granted && STATE.dataPermission.granted;
-    const dot = DOM.motionDot;
-    if (!dot) return;
-    const allowed = dot.classList.contains("allowed");
+function updatePermissionIndicators() {
+    
+    const audioGranted = STATE.audioPermission.granted;
+    const dataGranted = STATE.dataPermission.granted;
 
-    if (bothGranted && !allowed) {
-        dot.classList.add("allowed", "pulse");
-        setTimeout(() => dot.classList.remove("pulse"), 500);
-    } else if (!bothGranted && allowed) {
-        dot.classList.remove("allowed");
+    // Audio Dot: Fügt 'status-active' hinzu, wenn granted == true
+    if (DOM.audioDot) {
+        DOM.audioDot.classList.toggle('allowed', audioGranted);
     }
-    return bothGranted;
-}
+    if (DOM.audioDotGame) {
+        DOM.audioDotGame.classList.toggle('allowed', audioGranted);
+    }
 
+    // Data Dot: Fügt 'status-active' hinzu, wenn granted == true
+    if (DOM.dataDot) {
+        DOM.dataDot.classList.toggle('allowed', dataGranted);
+    }
+    if (DOM.dataDotGame) {
+        DOM.dataDotGame.classList.toggle('allowed', dataGranted);
+    }
+    
+    
+}
 /**
  * Schreibt den aktuellen Berechtigungsstatus in Firebase.
  */
@@ -514,19 +530,11 @@ function initPermissionListeners() {
         permState.granted = val.granted;
         permState.remember = val.remember;
         
-        updatePermissionDotCombined();
+        updatePermissionIndicators();
     };
 
     onValue(audioRef, snap => handlePermissionChange("audio", snap.val()));
     onValue(dataRef, snap => handlePermissionChange("data", snap.val()));
-}
-
-function allPermissionsDenied() {
-    return !STATE.audioPermission.granted && !STATE.dataPermission.granted;
-}
-
-function allRememberDenied() {
-    return !STATE.audioPermission.remember && !STATE.dataPermission.remember;
 }
 
 /**
@@ -535,6 +543,7 @@ function allRememberDenied() {
 function showPopup(type, title, message, onAllow, onDeny) {
 
     STATE.permissionPopupStartTime = Date.now();
+    DOM.rememberChk.checked = false;
 
     logEvent("popup_shown", {
         title: title,
@@ -588,11 +597,13 @@ async function askPermission(type) {
             message,
             async () => {
                 const rememberValue = DOM.rememberChk.checked;
+                updatePermissionIndicators();
                 await updatePermissionsInFirebase(type, true, rememberValue);
                 resolve(true);
             },
             async () => {
                 const rememberValue = DOM.rememberChk.checked;
+                updatePermissionIndicators();
                 await updatePermissionsInFirebase(type, false, rememberValue);
                 resolve(false);
             }
@@ -604,17 +615,18 @@ async function askPermission(type) {
  * Aktiviert einen pulsierenden Hinweis für das Mikrofon, falls die Berechtigung erteilt wurde.
  */
 function pulseMic(active) {
-    const micEl = DOM.micReminder;
+    const micEl = DOM.micStatus;
     if (!micEl) return;
     
     if (active) {
         micEl.style.backgroundColor = "#f00";
         micEl.style.boxShadow = "0 0 10px rgba(255,0,0,0.5)";
 
-        // Puls-Effekt (wie im Originalcode)
+        // Puls-Effekt 
         setInterval(() => {
             micEl.style.opacity = (micEl.style.opacity == 1) ? 0 : 1;
-        }, 1200);
+        
+        }, 1000);
     }
 }
 
@@ -634,16 +646,13 @@ async function startGame() {
     
     // Zeitmessungen und Fehler/Selektion zurücksetzen
     STATE.endPermissionTime = Date.now();
-    STATE.errors = 0;
     STATE.selectedPiece = null;
 
     // Mikrofon-Hinweis anzeigen
     if(STATE.audioPermission.granted){
         DOM.micText.style.opacity = "1";
         DOM.micReminder.style.opacity = "1";
-        setTimeout(() => {
-            DOM.micText.style.opacity="0";
-        }, 2000);
+        
     }
 
     // Puzzle-State aus Firebase laden (EINMALIGER GET-AUFRUF!)
@@ -689,6 +698,7 @@ async function resetPuzzle() {
     // 1. Permissions zurücksetzen
     await updatePermissionsInFirebase('audio', false, false);
     await updatePermissionsInFirebase('data', false, false);
+    updatePermissionIndicators();
 
     // 2. Puzzle-State in Firebase zurücksetzen
     await set(puzzleRef, null);
@@ -697,6 +707,7 @@ async function resetPuzzle() {
     STATE.boardState.fill(null);
     STATE.lastUpdateLocal = Date.now();
     STATE.unplacedPieces = [...Array(CONFIG.PUZZLE.TOTAL_PIECES).keys()];
+    STATE.errors = 0;
     // 4. Puzzle UI neu initialisieren
     initPuzzle();
 }
@@ -716,6 +727,7 @@ async function restartGame() {
     DOM.micReminder.style.opacity = "0";
     DOM.loadPuzzleBtn.style.display = "none";
     DOM.permissionBtn.style.display = "inline-block";
+    STATE.errors = 0;
 
     // 2. Study Session beenden
     await endStudySession();
@@ -724,10 +736,12 @@ async function restartGame() {
     if(!STATE.audioPermission.remember){
         STATE.audioPermission.granted = false; 
         await updatePermissionsInFirebase('audio', false, false);
+        updatePermissionIndicators();
     }
     if(!STATE.dataPermission.remember){
         STATE.dataPermission.granted = false; 
         await updatePermissionsInFirebase('data', false, false);
+        updatePermissionIndicators();
     }
 
     // 4. Puzzle-State in Firebase löschen (set auf null)
@@ -752,16 +766,13 @@ DOM.permissionBtn.addEventListener("click", async () => {
         }
     });
 
-    const shouldAskAudio = !STATE.audioPermission.granted || !STATE.audioPermission.remember;
-    const shouldAskData = !STATE.dataPermission.granted || !STATE.dataPermission.remember;
-
-    if (shouldAskAudio && !STATE.audioPermission.remember) {
+    if (!STATE.audioPermission.remember) {
         await askPermission("audio");
     } else if (STATE.audioPermission.remember) {
          logEvent("popup_skipped_due_to_remember", { permissionType: "audio" });
     }
     
-    if (shouldAskData && !STATE.dataPermission.remember) {
+    if (!STATE.dataPermission.remember) {
         await askPermission("data");
     } else if (STATE.dataPermission.remember) {
         logEvent("popup_skipped_due_to_remember", { permissionType: "data" });
