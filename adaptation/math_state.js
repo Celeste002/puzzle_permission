@@ -14,6 +14,7 @@ const motionDot = document.getElementById("motionDot");
 const gameBox = document.getElementById("gameBox");
 const mic = document.getElementById("micReminder");
 const micText = document.getElementById("micText");
+const micStatus = document.getElementById("micStatus");
 let ans1 = document.getElementById("ans1")
 let ans2 = document.getElementById("ans2")
 
@@ -138,68 +139,54 @@ async function loadProgressFromFirebase() {
         score
     });
 }
+function updatePermissionIndicators() {
+    
+    const audioGranted = audioPermission.granted;
+    const dataGranted = dataPermission.granted;
 
+    // Audio Dot: Fügt 'status-active' hinzu, wenn granted == true
+    if (audioDot) {
+        audioDot.classList.toggle('allowed', audioGranted);
+    }
+    if (audioDotGame) {
+        audioDotGame.classList.toggle('allowed', audioGranted);
+    }
+
+    // Data Dot: Fügt 'status-active' hinzu, wenn granted == true
+    if (dataDot) {
+        dataDot.classList.toggle('allowed', dataGranted);
+    }
+    if (dataDotGame) {
+        dataDotGame.classList.toggle('allowed', dataGranted);
+    }
+    
+    
+}
 // -------------------- Mikrofon-Erinnerung --------------------
 function pulseMic(active) {
 
-    if (!mic) return;
+   const micEl = micStatus;
+    if (!micEl) return;
     
-
     if (active) {
-      mic.style.display="block";
-      mic.style.opacity = 1;
-      micText.style.opacity=1
-      setTimeout(() => 
-              {
-                  if(micText.style.opacity==1){
-                      micText.style.opacity=0
-                  }else{
-                      micText.style.opacity=1;
-                  }
+        micEl.style.backgroundColor = "#f00";
+        micEl.style.boxShadow = "0 0 10px rgba(255,0,0,0.5)";
 
-              }, 2000);
-          mic.style.backgroundColor = "rgba(255, 30, 0, 1)";
-          mic.style.boxShadow = "0 0 15px rgba(255, 51, 0, 0.6)"; 
-
-          setInterval(() => 
-              {
-                  if(mic.style.opacity==1){
-                      mic.style.opacity=0
-                  }else{
-                      mic.style.opacity=1;
-                  }
-
-              }, 1200);
-          
-      }
+        // Puls-Effekt 
+        setInterval(() => {
+            micEl.style.opacity = (micEl.style.opacity == 1) ? 0 : 1;
+        
+        }, 1000);
+    }
 }
 // -------------------- Helper: Sync Notice --------------------
 function showSyncNotice(msg = "Fortschritt gespeichert") {
     let el = document.getElementById('syncNotice');
     el.textContent = msg;
     el.style.display = 'block';
-    setTimeout(() => el.style.display = 'none', 600);
+    setTimeout(() => el.style.display = 'none', 800);
 }
-
-// -------------------- Permissions --------------------
-// aktualisiert LED nur, wenn beide aktiv sind
-function updatePermissionDotCombined() {
-
-  const bothGranted = audioPermission.granted && dataPermission.granted;
-  const one= audioPermission.granted || dataPermission.granted;
-  const dot = document.getElementById("motionDot");
-  if (!dot) return;
-  const allowed = dot.classList.contains("allowed");
-
-  if (bothGranted && !allowed) {
-    
-    dot.classList.add("allowed", "pulse");
-    setTimeout(() => dot.classList.remove("pulse"), 500);
-  } else if (!bothGranted && allowed) {
-    dot.classList.remove("allowed");
-  } 
-  return bothGranted;
-}
+// -------------------- Berechtigungsmanagement --------------------
 
 // schreibt Permission in Firebase (schreibt nur, ändert keine lokalen Flags)
 async function updatePermissionsInFirebase(type, granted, remember = false) {
@@ -232,25 +219,18 @@ function initPermissionListeners() {
       dataPermission.remember = val.remember;
     }
     // Update combined UI indicator
-    updatePermissionDotCombined();
+    updatePermissionIndicators()
   };
 
   onValue(audioRef, snap => handlePermissionChange("audio", snap.val()));
   onValue(dataRef,  snap => handlePermissionChange("data", snap.val()));
 }
 
-function allPermissionsDenied() {
-  return !audioPermission.granted && !dataPermission.granted;
-}
-function allRememberDenied() {
-  return !audioPermission.remember && !dataPermission.remember;
-}
-
 // -------------------- Popup --------------------
 function showPopup(type, title, message, onAllow, onDeny) {
 
     permissionPopupStartTime = Date.now();
-
+    rememberChk.checked = false;  
     logEvent("popup_shown", {
         title: title,
         permissionType: type
@@ -291,34 +271,27 @@ function showPopup(type, title, message, onAllow, onDeny) {
     };
 }
 
-// askAllPermissions: benutzt die aktuelle Checkbox-Werte (rememberChk.checked) beim Schreiben
-async function askAllPermissions() {
-
-    await askPermission("audio");
-    await askPermission("data");
-
-}
 async function askPermission(type) {
     // Texte für die verschiedenen Berechtigungstypen
     const popupConfig = {
         audio: {
-            title: "Mikrofonnutzung zulassen?",
+            title: "Mikrofonzugriff erlauben?",
             message:
-                "Diese Anwendung nutzt dein Mikrofon, um Sprachinteraktionen oder Audiofeedback zu ermöglichen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
+                "Diese Anwendung nutzt dein Mikrofon, um Audiofeedback zuzulassen. \n Die Aufnahmen werden nicht gespeichert oder an Dritte weitergegeben.\n Magst du den Zugriff erlauben?",
         },
         data: {
             title: "Datenspeicherung erlauben?",
             message:
-                "Dein Lernfortschritt kann lokal gespeichert werden, damit du später dort weitermachen kannst, wo du aufgehört hast." +
-                "Die Daten werden nicht an Dritte weitergegeben und können jederzeit über den Reset-Button gelöscht werden.\n\n" +
-                "Möchtest du die Speicherung deines Fortschritts erlauben?",
+                "Diese Anwendung kann deinen Quiz-Fortschritt speichern, damit du zu einem anderen Zeitpunkt weiterspielen kannst.\n" +
+                "Die Daten werden nicht an Dritte weitergegeben und sind jederzeit mit den Reset-Button widerrufbar.\n\n" +
+                "Magst du die Speicherung deines Fortschritts erlauben?",
         },
     };
 
     const { title, message } = popupConfig[type];
 
     return new Promise((resolve) => {
-
+        
         showPopup(
           type,
             title,
@@ -340,23 +313,19 @@ async function askPermission(type) {
     });
 }
 
-function shuffle(array) {
-  let currentIndex = array.length, randomIndex;
-  while (currentIndex !== 0) {
-    randomIndex = Math.floor(Math.random() * currentIndex);
-    currentIndex--;
-    [array[currentIndex], array[randomIndex]] = [
-      array[randomIndex], array[currentIndex]
-    ];
-  }
-  return array;
-}
-
 async function initPuzzle() {
 
     endPermissionTime = Date.now();
     puzzleTime = Date.now();
+
+    if(audioPermission.granted){
+        micText.style.opacity = "1";
+        micReminder.style.opacity = "1";
+        
+    }
+
     pulseMic(audioPermission.granted)
+    
     
     startBtn.style.display = "none";
     ss.style.display="none";
@@ -372,6 +341,10 @@ function loadQuestion() {
 
 let questionText=document.getElementById("questionText")
 loadBtn.style.display = "inline-block";
+
+let solvedTasksText=document.getElementById("solvedTasksText")
+solvedTasksText.textContent=`Aufgabe: ${currentQuestion} / ${questions.length}`
+
   if (currentQuestion >= questions.length) {
     checkSolved();
     
@@ -418,7 +391,12 @@ async function handleAnswer(ans,index) {
   });
   
   currentQuestion++;
-  showSyncNotice();
+  if(dataPermission.granted){
+          showSyncNotice("Fortschritt gespeichert");
+      }
+      else{
+            showSyncNotice("Speichern fehlgeschlagen: Datenspeicherung nicht erlaubt.");
+      }
   if (dataPermission.granted) {
     await set(stateRef, {
         currentQuestion,
@@ -448,7 +426,9 @@ async function checkSolved() {
     question.style.display = "none";
     answers.style.display = "none";
     gameBox.style.display = "none";
-    mic.style.display="none";
+    mic.style.opacity="0";
+    micText.style.opacity="0";
+
 
     statusEl.style.display = "block";
     statusText.textContent = "Du hast alle Aufgaben erfolgreich gelöst! Du kannst das Quiz über den Neustart-Button erneut beginnen.";
@@ -473,6 +453,7 @@ async function restartGame() {
     const statusTime = document.getElementById("statusTime");
 
     await endStudySession();
+    
 
     statusEl.style.display = "none";
     statusText.textContent = "";
@@ -491,10 +472,12 @@ async function restartGame() {
 
     if(!audioPermission.remember){
         audioPermission.granted==false
+        updatePermissionIndicators()
         await updatePermissionsInFirebase('audio', false, false);
     }
     if(!dataPermission.remember){
         dataPermission.granted==false
+        updatePermissionIndicators()
         await updatePermissionsInFirebase('data', false, false);
     }
     
@@ -509,9 +492,9 @@ async function resetPuzzle() {
 
     await updatePermissionsInFirebase('audio', false, false);
     await updatePermissionsInFirebase('data', false, false);
+    updatePermissionIndicators()
     console.log("Permissions zurückgesetzt!");
-    motionDot.style.backgroundColor = "rgba(247, 179, 162, 1)";
-    setTimeout(() => motionDot.style.backgroundColor =  "rgba(255, 30, 0, 1)", 100);
+  
     console.log("Puzzle-State zurückgesetzt und neu gestartet!");
 }
 
@@ -534,13 +517,12 @@ startBtn.addEventListener("click", async () => {
             data: dataPermission
         }
     });
-
-    if (allPermissionsDenied() || allRememberDenied()) {
-        await askAllPermissions();
-    } else if(!audioPermission.granted || !audioPermission.remember){
+    
+    if(!audioPermission.remember){
         await askPermission("audio") 
     }
-    else if(!dataPermission.granted || !dataPermission.remember){
+    
+    if(!dataPermission.remember){
         await askPermission("data") 
     } 
     if (audioPermission.remember === true) {
