@@ -74,7 +74,8 @@
     <!-- Permission Status  -->
     <a-entity id="permDots" position="0 -0.6 0.02">
       <a-plane id="perm_border" width="0.16" height="0.16" color="#fff" position="-3.3 2 0"></a-plane>
-      <a-plane id="cam-perm" class="clickable" width="0.12" height="0.12" material="src: #return; color: #fff; shader:flat; transparent: true" position="-3.3 2 0.01"></a-plane>
+      <a-plane id="cam-perm" class="clickable" width="0.12" height="0.12" material="src: #return; color: #fff; shader:flat; transparent: true" position="-3.3 2 0.01" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200"></a-plane>
     </a-entity>
     <a-circle
         id="statusAudioStart" 
@@ -194,7 +195,9 @@
         opacity="0.95" 
         shader="flat" 
         class="clickable"
-        material="side: double">
+        material="side: double"
+        animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+        animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
       </a-plane>
       <a-text 
         value="Neustart" 
@@ -249,6 +252,7 @@
 <script type="module" src="vr_pop_sync_state.js"></script>
 </body>
 </html>
+
 
 
 
