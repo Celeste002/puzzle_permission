@@ -59,7 +59,9 @@ const DOM = {
     statusAudioStart: document.getElementById('statusAudioStart'),
     statusDataStart: document.getElementById('statusDataStart'), 
     statusAudioGame: document.getElementById('statusAudioGame'), 
-    statusDataGame: document.getElementById('statusDataGame'),     
+    statusDataGame: document.getElementById('statusDataGame'),
+    statusAudioText: document.getElementById('statusAudioText'), 
+    statusDataText: document.getElementById('statusDataText'), 
 };
 
 
@@ -179,6 +181,8 @@ function updatePermissionIndicators() {
     if (DOM.statusAudioGame.getAttribute('visible') === 'false') {
         DOM.statusAudioGame.setAttribute('visible', 'true');
         DOM.statusDataGame.setAttribute('visible', 'true');
+        DOM.statusAudioText.setAttribute('visible','true');
+        DOM.statusDataText.setAttribute('visible','true');
     }
 }
 
@@ -752,6 +756,8 @@ async function restartVRPuzzle() {
   DOM.denyBtn.classList.add("clickable"); 
   DOM.statusAudioGame.setAttribute('visible', 'false');
     DOM.statusDataGame.setAttribute('visible', 'false');
+    DOM.statusAudioText.setAttribute('visible','true');
+    DOM.statusDataText.setAttribute('visible','true');
   
   // 2. Study Session beenden
   await endStudySession();
