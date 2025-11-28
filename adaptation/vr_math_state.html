@@ -67,7 +67,7 @@
         id="startText" 
         value="Bevor du starten kannst, braucht die Anwendung einige Berechtigungen.
           Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.
-          Um die Berechtigungen zu widerrufen, klicke auf die Knopf links oben neben der Statusanzeige.
+          Um die Berechtigungen zu widerrufen, klicke auf das Reset Symbol links oben neben den Statusanzeigen.
           Klicke mit dem Controller auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten."
         align="center" color="#000" width="3.5" position="0 0 0.05">
       </a-text>
@@ -75,7 +75,8 @@
     <!-- Permission Status  -->
     <a-entity id="permDots" position="0 -0.6 0">
       <a-plane id="perm_border" width="0.16" height="0.16" color="#fff" position="-3.3 2 0"></a-plane>
-      <a-plane id="resetBtn" class="clickable" width="0.12" height="0.12" material="src: #return; color: #fff; shader:flat; transparent: true" position="-3.3 2 0.01"></a-plane>
+      <a-plane id="resetBtn" class="clickable" width="0.12" height="0.12" material="src: #return; color: #fff; shader:flat; transparent: true" position="-3.3 2 0.01" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200"></a-plane>
     </a-entity>
     <a-circle
         id="statusAudioStart" 
@@ -127,7 +128,8 @@
 <a-plane id="quizWin" width="5" height="2" color="#111" opacity="0.8" position="0 4 -3" visible="false">
     <a-text id="quizDone" value="Großartig! Du hast alle Aufgaben abgeschlossen! Klicke auf „Neustart“, um eine neue Runde zu starten." align="center" color="#fff" width="3" position="0 0 0.1"></a-text>   
     <a-text id="quizResult" value="Großartig! Du hast alle Aufgaben abgeschlossen! Klicke auf „Neustart“, um eine neue Runde zu starten." align="center" color="#fff" width="4" position="0 0.6 0.1"></a-text>   
-    <a-entity id="restartButtonVR" visible="false" position="0 -0.5 0.03" class="clickable">
+    <a-entity id="restartButtonVR" visible="false" position="0 -0.5 0.03" class="clickable" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
       <a-plane 
         id="restartPlane" 
         width="1.5" 
@@ -224,10 +226,12 @@
     <a-text id="questionText" value="Was ist 3 + 4 ?" align="center" color="#000" width="6" position="0 0.5 0.05"></a-text>
 
     <a-entity id="answers" position="0 -0.5 0">
-      <a-plane class="answer clickable" color="#2563eb" width="2" height="0.5" position="-1.5 0 0.05">
+      <a-plane class="answer clickable" color="#2563eb" width="2" height="0.5" position="-1.5 0 0.05" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
         <a-text value="6" align="center" color="#fff" width="4" position="0 0 0.05"></a-text>
       </a-plane>
-      <a-plane class="answer clickable" color="#2563eb" width="2" height="0.5" position="1.5 0 0.05">
+      <a-plane class="answer clickable" color="#2563eb" width="2" height="0.5" position="1.5 0 0.05" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
         <a-text value="7" align="center" color="#fff" width="4" position="0 0 0.05"></a-text>
       </a-plane>
     </a-entity>
@@ -275,4 +279,5 @@
 <script type="module" src="vr_math_state.js"></script>
 </body>
 </html>
+
 
