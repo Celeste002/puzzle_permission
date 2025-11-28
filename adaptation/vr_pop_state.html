@@ -176,7 +176,7 @@
   <!-- Gewinnanzeige -->
   <a-plane id="puzzleWin" width="6" height="2.5" color="#111" opacity="0.7" position="0 3 -1" visible="false">
     <a-entity id="puzzleText" text="Großartig! Du hast das Puzzle abgeschlossen! Klicke auf „Neustart“, um eine neue Runde zu starten." color="#fff" width="1" scale="0.5 0.5 0.5" position="0 0 0.2" wrap-count="20" visible="false"></a-entity>
-    <a-entity id="restartButtonVR" visible="false" position="0 -0.8 0.03" class="clickable">
+    <a-entity id="restartButtonVR" visible="false" position="0 -0.8 0.03">
       <a-plane 
         id="restartPlane" 
         width="1.5" 
@@ -184,7 +184,6 @@
         color="#1e90ff" 
         opacity="0.95" 
         shader="flat" 
-        class="clickable"
         material="side: double"
         animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
         animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
@@ -242,6 +241,7 @@
 <script type="module" src="vr_pop_sync_state.js"></script>
 </body>
 </html>
+
 
 
 
