@@ -714,6 +714,8 @@ async function startGame() {
       STATE.unplacedPieces = order;
       DOM.statusAudioGame.setAttribute('visible', 'true');
       DOM.statusDataGame.setAttribute('visible', 'true');
+        DOM.statusAudioText.setAttribute('visible', 'true');
+      DOM.statusDataText.setAttribute('visible', 'true');
       updatePermissionIndicators();
       renderVRPuzzleState(); // Render mit neu initialisiertem Zustand
       if(STATE.dataPermission.granted) {
@@ -723,6 +725,8 @@ async function startGame() {
   } else {
         DOM.statusAudioGame.setAttribute('visible', 'true');
         DOM.statusDataGame.setAttribute('visible', 'true');
+      DOM.statusAudioText.setAttribute('visible', 'true');
+        DOM.statusDataText.setAttribute('visible', 'true');
         updatePermissionIndicators();
         renderVRPuzzleState(); 
   }
