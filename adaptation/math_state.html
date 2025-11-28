@@ -286,7 +286,8 @@
     <div class="container_screen">
       <div class="start-box">
         <div id="permissionStatus">
-            <button id="motionDot" class="clickable" style="position:relative; bottom: 25px;color: #fff;border: none;width: 18px;height: 18px;border-radius: 50%; cursor: pointer;" data-tooltip="Berechtigung zurücksetzen">
+            <button id="motionDot" class="clickable" style="position:relative; bottom: 25px;color: #fff;border: none;width: 18px;height: 18px;border-radius: 50%; cursor: pointer;" data-tooltip="Berechtigung zurücksetzen" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
             <img src="./rotate-solid-full.png" style="width: 18px; height: 18px; position: relative; right: 6px;"></img>
           </button>   
           <div class="perm-indicator">
@@ -331,8 +332,10 @@
     </div>
 
     <div id="answers" style="display:none;">
-      <button class="answer" id="ans1"></button>
-      <button class="answer" id="ans2"></button>
+      <button class="answer" id="ans1" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200"></button>
+      <button class="answer" id="ans2" animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200"></button>
     </div>
   </div>
   
@@ -369,4 +372,5 @@
 
 </body>
 </html>
+
 
