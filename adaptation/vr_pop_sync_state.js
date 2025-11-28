@@ -53,6 +53,7 @@ const DOM = {
     puzzleText: document.getElementById("puzzleText"),
     winBox: document.getElementById("puzzleWin"),
     restartButton: document.getElementById("restartButtonVR"),
+    restartPlane: document.getElementById("restartPlane"),
     popupHead: document.getElementById("popup-head"),
     popupText: document.getElementById("popup-text"),
     statusAudioStart: document.getElementById('statusAudioStart'),
@@ -251,6 +252,8 @@ function checkSolved() {
     DOM.gamezone.setAttribute("visible", "false");
     DOM.winBox.setAttribute("visible","true");
     DOM.restartButton.setAttribute("visible", "true");
+    DOM.restartButton.classList.add("clickable"); 
+    DOM.restartPlane.classList.add("clickable"); 
     DOM.winBox.setAttribute("animation__pulse",{property:"scale", dir:"alternate", dur:1000, easing:"easeInOutSine", loop:true, to:"1.1 1.1 1"});
     
     console.log(puzzleDuration, totalDuration, permissonDuration);    
@@ -737,6 +740,8 @@ async function restartVRPuzzle() {
   DOM.micTx.setAttribute("visible","false")
   DOM.mic.setAttribute("visible","false")
   DOM.vrLoadBtn.setAttribute("visible", false);
+    DOM.restartButton.classList.remove("clickable"); 
+    DOM.restartPlane.classList.remove("clickable"); 
   
   DOM.solutionRoot.innerHTML = "";
   DOM.scrambleRoot.innerHTML = "";
