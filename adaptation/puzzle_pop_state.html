@@ -52,6 +52,22 @@
       font-size: 2rem;
       margin-bottom: 1.5rem;
     }
+    /* 1. Visueller Indikator für ausgewähltes Teil (Grüner Rahmen) */
+    .piece.selected-piece {
+        /* Beispiel: Dicker, grüner Rahmen */
+        border: 3px solid #4CAF50 !important; /* Grün */
+        box-shadow: 0 0 10px rgba(76, 175, 80, 0.8);
+        cursor: grabbing; /* Cursor-Indikator während der Auswahl */
+        z-index: 100; /* Sicherstellen, dass das Teil oben liegt */
+    }
+
+    /* 2. Visueller Indikator für falschen Slot (Roter Rahmen) */
+    .slot.wrong {
+        /* Beispiel: Dicker, roter Rahmen für Fehler */
+        border: 4px solid #F44336 !important; /* Rot */
+        background-color: rgba(244, 67, 54, 0.2); /* Roter Hintergrund-Schleier */
+        animation: blink-red 0.3s ease-in-out; /* Optional: Leichter Blinzel-Effekt */
+    }
   
     #permissionBtn {
       background: #4a90e2;
@@ -338,7 +354,7 @@
         <h1>Willkomen zum Puzzle!</h1>
         <p>Bevor du starten kannst, braucht die Anwendung einige Berechtigungen.<br>
           Diese helfen dabei, dein Spielerlebnis zu speichern und zu verbessern.<br>
-          Um die Berechtigungen zu widerrufen, klicke auf die Knopf links oben neben der Statusanzeige.<br>
+          Um die Berechtigungen zu widerrufen, klicke auf das Symbol links oben neben den Statusanzeigen.<br>
           Klicke auf „Start“, um die Berechtigungsanfragen anzuzeigen oder das Spiel zu starten.
         </p>
 
@@ -407,3 +423,4 @@
 
 </body>
 </html>
+
