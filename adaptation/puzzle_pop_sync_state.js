@@ -166,9 +166,9 @@ function buildEmptyPuzzle() {
         const slot = document.createElement("div");
         slot.className = "slot";
         slot.dataset.index = i;
-
-        slot.addEventListener("dragover", (e) => e.preventDefault());
-        slot.addEventListener("drop", onDrop);
+    
+        // Click-Listener für Slots
+        slot.addEventListener("click", onPieceClick); 
 
         DOM.boardContainer.appendChild(slot);
     }
@@ -180,7 +180,7 @@ function buildEmptyPuzzle() {
 function makePiece(i) {
     const piece = document.createElement("div");
     piece.className = "piece clickable";
-    piece.draggable = true;
+    piece.draggable = false; 
     piece.dataset.piece = i;
 
     // Hintergrundbild und Position setzen
@@ -189,18 +189,8 @@ function makePiece(i) {
     piece.style.backgroundSize = `${COLS * 100}px ${ROWS * 100}px`;
     piece.style.backgroundPosition = `${-(i % COLS) * 100}px ${-Math.floor(i / COLS) * 100}px`;
 
-    piece.addEventListener("dragstart", (e) => {
-        STATE.selectedPiece = piece;
-        piece.classList.add("selected-piece");
-        e.dataTransfer.setData("piece", i);
-    });
-    
-    piece.addEventListener("dragend", () => {
-        if (STATE.selectedPiece) {
-            STATE.selectedPiece.classList.remove("selected-piece");
-            STATE.selectedPiece = null;
-        }
-    });
+    // NEU: Click-Listener für Teile
+    piece.addEventListener("click", onPieceClick);
 
     return piece;
 }
@@ -232,19 +222,63 @@ async function initPuzzle() {
 }
 
 /**
- * Handler für das Ablegen eines Puzzleteils auf einem Slot (Drag & Drop).
+ * Neue Click-Logik für alle Teile und Slots (Click-and-Select).
  */
-function onDrop(e) {
-    e.preventDefault();
-    const slotIndex = parseInt(e.currentTarget.dataset.index);
-    const pieceIndex = parseInt(e.dataTransfer.getData("piece"));
-    const piece = document.querySelector(`.piece[data-piece="${pieceIndex}"]`);
+function onPieceClick(e) {
+    const target = e.currentTarget;
+
+    // 1. FALL: KLICK AUF EIN TEIL (Zum Auswählen oder Abwählen)
+    if (target.classList.contains('piece')) {
+        
+        // Bereits platziertes Teil kann nicht (de-)selektiert werden
+        if (target.parentElement.classList.contains('slot')) return;
+
+        // Teil bereits ausgewählt: DE-SELEKTIEREN
+        if (STATE.selectedPiece === target) {
+            STATE.selectedPiece.classList.remove("selected-piece");
+            STATE.selectedPiece = null;
+            console.log("Teil abgewählt:", target.dataset.piece);
+
+        // Neues Teil auswählen: SELEKTIEREN
+        } else {
+            // Wenn bereits ein anderes Teil ausgewählt ist, zuerst deselektieren
+            if (STATE.selectedPiece) {
+                STATE.selectedPiece.classList.remove("selected-piece");
+            }
+            STATE.selectedPiece = target;
+            STATE.selectedPiece.classList.add("selected-piece"); // Fügt die grüne Markierung hinzu
+            console.log("Teil ausgewählt:", target.dataset.piece);
+            logEvent("piece_selected", { pieceIndex: target.dataset.piece });
+        }
+    }
+
+    // 2. FALL: KLICK AUF EINEN SLOT (Zum Ablegen)
+    else if (target.classList.contains('slot')) {
+        if (STATE.selectedPiece) {
+            logEvent("slot_clicked", { slotIndex: target.dataset.index, pieceIndex: STATE.selectedPiece.dataset.piece });
+            attemptPiecePlacement(target);
+            // WICHTIG: Wenn attemptPiecePlacement einen Fehler meldet, bleibt das Teil ausgewählt!
+        }
+    }
+}
+
+/**
+ * Kernlogik: Prüft und platziert das in STATE.selectedPiece gespeicherte Teil in einem Slot.
+ * @param {HTMLElement} slot Das Slot-Element, auf das geklickt wurde.
+ */
+function attemptPiecePlacement(slot) {
+    
+    if (!STATE.selectedPiece) return;
+
+    const piece = STATE.selectedPiece;
+    const pieceIndex = parseInt(piece.dataset.piece);
+    const slotIndex = parseInt(slot.dataset.index);
 
     // Slot ist bereits belegt
     if (STATE.boardState[slotIndex] !== null) return;
 
     if (pieceIndex === slotIndex) {
-        // Richtige Position
+        // ✅ RICHTIGE POSITION (GRÜN: KEINE ÄNDERUNG)
         STATE.boardState[slotIndex] = pieceIndex;
 
         const indexToRemove = STATE.unplacedPieces.indexOf(pieceIndex);
@@ -252,14 +286,18 @@ function onDrop(e) {
             STATE.unplacedPieces.splice(indexToRemove, 1);
         }
 
-        e.currentTarget.appendChild(piece); // Teil in den Slot verschieben
+        slot.appendChild(piece); 
         piece.draggable = false;
         piece.style.cursor = "default";
+        piece.classList.remove('selected-piece'); // Markierung entfernen
 
+        // Teil erfolgreich platziert, deselect
+        STATE.selectedPiece = null;
+        
         savePuzzleState();
         checkSolved();
     } else {
-        // Falsche Position
+        // ❌ FALSCHE POSITION (ROT BLINKEN LASSEN)
         STATE.errors++;
         logEvent("error", {
             type: "wrong_answer",
@@ -268,11 +306,15 @@ function onDrop(e) {
             slotIndex: slotIndex
         });
         savePuzzleState();
-        e.currentTarget.classList.add("wrong");
-        setTimeout(() => e.currentTarget.classList.remove("wrong"), 300);
+        
+        // 🚨 VISUELLES FEEDBACK: Slot kurz rot aufleuchten lassen
+        slot.classList.add("wrong");
+        setTimeout(() => {
+             slot.classList.remove("wrong");
+             // Das ausgewählte Teil bleibt ausgewählt (STATE.selectedPiece = piece)
+        }, 300); // Leuchtet 300ms lang rot
     }
 }
-
 /**
  * Prüft, ob das Puzzle gelöst wurde und zeigt den Endstatus an.
  */
