@@ -605,7 +605,7 @@ function showPopup(type, title, message, onAllow, onDeny) {
             permissionType: type,
             granted: true,
             remember: DOM.rememberChk?.checked ?? false,
-            responseTime: Date.now() - STATE.permissionPopupStartTime
+            responseTime: ((Date.now() - STATE.permissionPopupStartTime)/ 1000).toFixed(2)
         });
 
         if (onAllow) await onAllow();
@@ -619,7 +619,7 @@ function showPopup(type, title, message, onAllow, onDeny) {
             permissionType: type,
             granted: false,
             remember: DOM.rememberChk?.checked ?? false,
-            responseTime: Date.now() - STATE.permissionPopupStartTime
+            responseTime: ((Date.now() - STATE.permissionPopupStartTime)/ 1000).toFixed(2)
         });
 
         if (onDeny) await onDeny();
