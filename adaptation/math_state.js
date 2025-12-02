@@ -251,7 +251,7 @@ function showPopup(type, title, message, onAllow, onDeny) {
         permissionType: type,
         granted: true,
         remember: rememberChk?.checked ?? false,
-        responseTime: Date.now() - permissionPopupStartTime
+        responseTime: ((Date.now() - permissionPopupStartTime)/ 1000).toFixed(2)
       });
 
         if (onAllow) await onAllow();
@@ -263,7 +263,7 @@ function showPopup(type, title, message, onAllow, onDeny) {
         permissionType: type,
         granted: false,
         remember: rememberChk?.checked ?? false,
-        responseTime: Date.now() - permissionPopupStartTime
+        responseTime: ((Date.now() - permissionPopupStartTime)/ 1000).toFixed(2)
       });
       popupOverlay.style.display = "none";
       popupBox.style.display = "none";
@@ -387,7 +387,7 @@ async function handleAnswer(ans,index) {
 
   logEvent("task_completed", {
     question: currentQuestion,
-    duration: Date.now() - taskStartTime
+    duration: ((Date.now() - taskStartTime)/ 1000).toFixed(2)
   });
   
   currentQuestion++;
@@ -548,3 +548,4 @@ rememberChk.addEventListener("change", () => {
 
 // -------------------- Init --------------------
 initPermissionListeners();
+
