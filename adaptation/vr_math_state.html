@@ -113,11 +113,11 @@
   
 
   <!-- Startbutton -->
-  <a-entity id="permissionBtn" visible="true" position="0 3 -2" class="clickable">
+  <a-entity id="permissionBtn" visible="true" position="0 3 -1.9" class="clickable">
     <a-plane id="plane" width="2" height="0.4" color="#2563eb" opacity="0.9"
       class="clickable"
       animation__hoverin="startEvents: mouseenter; property: scale; to: 1.1 1.1 1; dur: 200"
-      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200">
+      animation__hoverout="startEvents: mouseleave; property: scale; to: 1 1 1; dur: 200" position="0 0 0.05">
     </a-plane>
     <a-text id="permissionBtnText" value="Start" align="center" color="#fff" width="6" position="0 0 0.05"></a-text>
   </a-entity>
@@ -279,5 +279,6 @@
 <script type="module" src="vr_math_state.js"></script>
 </body>
 </html>
+
 
 
