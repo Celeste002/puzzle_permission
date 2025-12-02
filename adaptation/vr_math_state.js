@@ -261,7 +261,7 @@ function showPopup(type, title, message, onAllow, onDeny) {
         permissionType: type,
         granted: false,
         remember: remember,
-        responseTime: Date.now() - permissionPopupStartTime
+        responseTime: (Date.now() - permissionPopupStartTime/ 1000).toFixed(2)
       });
 
     if (onDeny) await onDeny();
@@ -459,7 +459,7 @@ function loadQuestion() {
       }
       logEvent("task_completed", {
         question: currentQuestion,
-        duration: Date.now() - taskStartTime
+        duration: (Date.now() - taskStartTime/ 1000).toFixed(2)
       });
       
       if(dataPermission.granted){
@@ -574,3 +574,4 @@ if (resetBtn) {
 }
 
 initPermissionListeners();
+
