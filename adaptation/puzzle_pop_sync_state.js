@@ -86,6 +86,7 @@ let STATE = {
 
     // Zeitmessungen
     permissionTime: 0,
+    taskTime:0,
     overallTime: 0,
     endPermissionTime: 0,
     permissionPopupStartTime: 0,
@@ -383,7 +384,8 @@ async function savePuzzleState(additionalPayload = {}) {
         logEvent("puzzle_state_saved", { 
             placedCount: STATE.boardState.filter(v => v !== null).length, 
             isCompleted: payload.solved,
-            timestamp: payload.timestamp
+            timestamp: payload.timestamp,
+            duration: (STATE.taskTime/ 1000).toFixed(2)
         });
     } catch (err) {
         console.warn('[SYNC] save failed', err);
@@ -838,6 +840,7 @@ async function restartGame() {
 // Start-Button Handler: Verwaltet den Permission-Flow und startet das Spiel.
 DOM.permissionBtn.addEventListener("click", async () => {
     STATE.permissionTime = Date.now();
+    STATE.taskTime=Date.now();
     await startStudySession();
     
     logEvent("task_started", {
