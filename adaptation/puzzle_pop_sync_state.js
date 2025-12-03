@@ -256,7 +256,7 @@ function onPieceClick(e) {
     // 2. FALL: KLICK AUF EINEN SLOT (Zum Ablegen)
     else if (target.classList.contains('slot')) {
         if (STATE.selectedPiece) {
-            logEvent("slot_clicked", { slotIndex: target.dataset.index, pieceIndex: STATE.selectedPiece.dataset.piece });
+            logEvent("slot_clicked", { slotIndex: target.dataset.index, pieceIndex: STATE.selectedPiece.dataset.piece, duration: STATE.overallTime });
             attemptPiecePlacement(target);
             // WICHTIG: Wenn attemptPiecePlacement einen Fehler meldet, bleibt das Teil ausgewählt!
         }
