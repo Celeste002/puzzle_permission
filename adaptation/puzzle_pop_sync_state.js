@@ -385,7 +385,7 @@ async function savePuzzleState(additionalPayload = {}) {
             placedCount: STATE.boardState.filter(v => v !== null).length, 
             isCompleted: payload.solved,
             timestamp: payload.timestamp,
-            duration: (STATE.taskTime/ 1000).toFixed(2)
+            duration: ((Date.now()-STATE.taskTime)/ 1000).toFixed(2)
         });
     } catch (err) {
         console.warn('[SYNC] save failed', err);
