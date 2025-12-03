@@ -249,14 +249,14 @@ function onPieceClick(e) {
             STATE.selectedPiece = target;
             STATE.selectedPiece.classList.add("selected-piece"); // Fügt die grüne Markierung hinzu
             console.log("Teil ausgewählt:", target.dataset.piece);
-            logEvent("piece_selected", { pieceIndex: target.dataset.piece });
+            logEvent("piece_selected", { pieceIndex: target.dataset.piece, duration: (STATE.overallTime/ 1000).toFixed(2) });
         }
     }
 
     // 2. FALL: KLICK AUF EINEN SLOT (Zum Ablegen)
     else if (target.classList.contains('slot')) {
         if (STATE.selectedPiece) {
-            logEvent("slot_clicked", { slotIndex: target.dataset.index, pieceIndex: STATE.selectedPiece.dataset.piece, duration: STATE.overallTime });
+            logEvent("slot_clicked", { slotIndex: target.dataset.index, pieceIndex: STATE.selectedPiece.dataset.piece, duration: (STATE.overallTime/ 1000).toFixed(2) });
             attemptPiecePlacement(target);
             // WICHTIG: Wenn attemptPiecePlacement einen Fehler meldet, bleibt das Teil ausgewählt!
         }
