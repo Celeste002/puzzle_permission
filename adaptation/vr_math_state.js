@@ -43,7 +43,6 @@ const permissions = {
   audio: ref(db, "permission_math/audio"),
   data: ref(db, "permission_math/data")
 };
-const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
 
 let currentQuestion =  0;
 let userAnswers = [];
@@ -86,7 +85,11 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
 function logDur(event) {
+  let TASK_TIME_REF = ref(db, 'sessions/' + 'VR_Mathe_'+ getRandomInt(1000) + '/taskStartTime');
     push(TASK_TIME_REF, {
         event: event,
         duration: ((Date.now()-taskStartTime)/1000).toFixed(2),
@@ -583,6 +586,7 @@ if (resetBtn) {
 }
 
 initPermissionListeners();
+
 
 
 
