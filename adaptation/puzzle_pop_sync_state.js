@@ -515,7 +515,21 @@ function showSyncNotice(msg = "Fortschritt gespeichert") {
     el.style.display = 'block';
     setTimeout(() => el.style.display = 'none', 1200);
 }
-
+async function writeStartTimeToFirebase(device) {
+    const snap = await get(TASK_TIME_REF);
+    if (!snap.exists()) {
+        const startTime = Date.now();
+        await set(TASK_TIME_REF, startTime);
+        logEvent("cross_device_timing_started", {
+            device: device,
+            startTime: startTime
+        });
+        return startTime;
+    }
+    // Wenn die Zeit bereits existiert (z.B. nach einem Geräte-Wechsel), 
+    // wird die vorhandene Zeit einfach zurückgegeben (nicht überschrieben).
+    return snap.val();
+}
 
 /**
  * Aktualisiert die Farbe und Sichtbarkeit der Status-Indikatoren (Ampel-Logik).
@@ -744,6 +758,7 @@ async function resetPuzzle() {
 
     // 2. Puzzle-State in Firebase zurücksetzen
     await set(puzzleRef, null);
+    await set(TASK_TIME_REF, null);
     
     // 3. Lokalen State zurücksetzen
     STATE.boardState.fill(null);
@@ -753,7 +768,29 @@ async function resetPuzzle() {
     // 4. Puzzle UI neu initialisieren
     initPuzzle();
 }
-
+async function logTaskCompletion() {
+    const startSnap = await get(TASK_TIME_REF);
+    
+    if (!startSnap.exists()) {
+        console.error("Task Completion Time: Startzeit nicht in Firebase gefunden! Keine Zeitmessung möglich.");
+        return;
+    }
+    
+    const taskStartTime = startSnap.val();
+    const endTime = Date.now();
+    const durationMs = endTime - taskStartTime;
+    const durationSec = (durationMs / 1000).toFixed(2);
+    
+    // Loggen des finalen Events in die Datenbank
+    logEvent("task_completed_cross_device", { 
+        durationMs: durationSec / 60,
+        durationSec: durationSec,
+        endDevice: "desktop"
+    });
+    
+    // OPTIONAL: Firebase-Knoten löschen, um das nächste Experiment vorzubeschreiben
+    // await set(TASK_TIME_REF, null);
+}
 /**
  * Startet das Spiel neu nach dem Lösen (zurück zum Startbildschirm).
  */
@@ -773,6 +810,7 @@ async function restartGame() {
 
     // 2. Study Session beenden
     await endStudySession();
+    await set(TASK_TIME_REF, null);
 
     // 3. Permissions zurücksetzen, wenn "Merken" nicht aktiv war
     if(!STATE.audioPermission.remember){
