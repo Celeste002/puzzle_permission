@@ -32,6 +32,7 @@ const permissions = {
   audio: ref(db, "permission_math/audio"),
   data: ref(db, "permission_math/data")
 };
+const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
 
 // -------------------- Spielzustand --------------------
 let currentQuestion = 0;
@@ -76,6 +77,12 @@ function logEvent(eventType, details = {}) {
         ...details
     });
     console.log("[LOG]", eventType, details);
+}
+function logDur() {
+      push(TASK_TIME_REF, {
+          duration: ((Date.now()-STATE.taskTime)/1000).toFixed(2),
+          device: "Laptop"
+      }
 }
 
 async function endStudySession() {
@@ -361,7 +368,7 @@ async function handleAnswer(ans,index) {
   
   const task = questions[currentQuestion];
   const correct = index === task.correct;
-
+  logDur();
   if (correct) {
     score++;
     statusText.textContent = "Richtig!";
@@ -422,7 +429,7 @@ async function checkSolved() {
     const statusText = document.getElementById("statusText");
     const statusTime = document.getElementById("statusTime");
     const restartBtn = document.getElementById("restartBtn");
-
+    logDur();
     question.style.display = "none";
     answers.style.display = "none";
     gameBox.style.display = "none";
@@ -548,4 +555,5 @@ rememberChk.addEventListener("change", () => {
 
 // -------------------- Init --------------------
 initPermissionListeners();
+
 
