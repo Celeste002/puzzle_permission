@@ -82,7 +82,9 @@ function logDur() {
       push(TASK_TIME_REF, {
           duration: ((Date.now()-taskStartTime)/1000).toFixed(2),
           device: "Laptop"
-      }
+      });
+      console.log("[LOG]", taskStartTime);
+
 }
 
 async function endStudySession() {
@@ -555,6 +557,7 @@ rememberChk.addEventListener("change", () => {
 
 // -------------------- Init --------------------
 initPermissionListeners();
+
 
 
 
