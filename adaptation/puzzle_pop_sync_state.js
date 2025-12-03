@@ -134,7 +134,7 @@ function logDur() {
         duration: ((Date.now()-STATE.taskTime)/1000).toFixed(2),
         device: "Laptop"
     });
-    console.log("[LOG]", taskStartTime);
+    console.log("[LOG]", STATE.taskTime);
 }
 
 /**
