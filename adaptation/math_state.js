@@ -78,8 +78,9 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
-function logDur() {
+function logDur(event) {
       push(TASK_TIME_REF, {
+          event: event,
           duration: ((Date.now()-taskStartTime)/1000).toFixed(2),
           device: "Laptop"
       });
@@ -370,7 +371,7 @@ async function handleAnswer(ans,index) {
   
   const task = questions[currentQuestion];
   const correct = index === task.correct;
-  logDur();
+  logDur(currentQuestion);
   if (correct) {
     score++;
     statusText.textContent = "Richtig!";
@@ -431,7 +432,7 @@ async function checkSolved() {
     const statusText = document.getElementById("statusText");
     const statusTime = document.getElementById("statusTime");
     const restartBtn = document.getElementById("restartBtn");
-    logDur();
+    logDur("solved");
     question.style.display = "none";
     answers.style.display = "none";
     gameBox.style.display = "none";
@@ -557,6 +558,7 @@ rememberChk.addEventListener("change", () => {
 
 // -------------------- Init --------------------
 initPermissionListeners();
+
 
 
 
