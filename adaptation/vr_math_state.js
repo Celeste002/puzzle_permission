@@ -43,7 +43,7 @@ const permissions = {
   audio: ref(db, "permission_math/audio"),
   data: ref(db, "permission_math/data")
 };
-const TASK_TIME_REF = ref(db, 'session/' + newSessionId() + '/taskStartTime');
+const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
 
 let currentQuestion =  0;
 let userAnswers = [];
@@ -86,10 +86,11 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
-function logDur() {
+function logDur(event) {
     push(TASK_TIME_REF, {
+        event: event,
         duration: ((Date.now()-taskStartTime)/1000).toFixed(2),
-        device: "Laptop"
+        device: "vr"
     });
     console.log("[LOG]", taskStartTime);
 }
@@ -464,7 +465,7 @@ function loadQuestion() {
         correctAnswer: q.correct
       });
       }
-      logDur(),
+      logDur(currentQuestion),
       logEvent("task_completed", {
         question: currentQuestion,
         duration: ((Date.now() - taskStartTime)/ 1000).toFixed(2)
@@ -505,7 +506,7 @@ function showResult() {
   answerButtons.forEach((btn) => {
     btn.classList.remove("clickable")
   })
-  logDur();
+  logDur("solved");
   const correct = userAnswers.filter((a) => a === true).length;
   const resultText = `Ergebnis: ${score} von ${questions.length} richtig!`;
   quizResult.setAttribute("value", resultText);
@@ -582,6 +583,7 @@ if (resetBtn) {
 }
 
 initPermissionListeners();
+
 
 
 
