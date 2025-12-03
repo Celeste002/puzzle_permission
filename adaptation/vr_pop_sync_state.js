@@ -68,6 +68,7 @@ const DOM = {
 // Firebase Refs und Client-ID
 const PUZZLE_REF = ref(db, "puzzle/state");
 const CLIENT_ID = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('client-' + Math.random().toString(36).slice(2));
+const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
 
 // =========================================================================
 // II. ZUSTANDSMANAGEMENT
@@ -87,6 +88,7 @@ let STATE = {
     permissionTime: 0,
     overallTime: 0,
     endPermissionTime: 0,
+    taskStartTime:0,
     permissionPopupStartTime: 0,
     sessionCounter: 0,
 
@@ -128,7 +130,13 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
-
+function logDur() {
+    push(TASK_TIME_REF, {
+        duration: ((Date.now()-STATE.taskStartTime)/1000).toFixed(2),
+        device: "Laptop"
+    });
+    console.log("[LOG]", STATE.taskStartTime);
+}
 /**
  * Startet eine neue Study Session (erzeugt neue ID).
  */
@@ -249,7 +257,7 @@ function checkSolved() {
     const permissonDuration = ((STATE.endPermissionTime - STATE.permissionTime) / 1000).toFixed(2);
     const puzzleDuration = ((endTime - STATE.overallTime) / 1000).toFixed(2);
     const totalDuration = ((endTime - STATE.permissionTime) / 1000).toFixed(2);
-
+    logDur();
     DOM.puzzleText.setAttribute("text",{value:`Geschafft! Du hast \n⏱ ${STATE.errors} Fehler gemacht!`, align:"center", color:"#fff", width:8, wrapCount:30});
     DOM.puzzleText.setAttribute("visible","true");
     DOM.gamezone.setAttribute("visible", "false");
@@ -367,6 +375,7 @@ function onPieceClick(e) {
 function onSlotClick(e) {
     e.stopPropagation();
     const slot = e.currentTarget;
+    
     if (!STATE.selectedPiece) return;
 
     const pieceIndex = parseInt(STATE.selectedPiece.dataset.index, 10);
@@ -375,6 +384,7 @@ function onSlotClick(e) {
 
     if (pieceIndex === slotIndex && STATE.boardState[slotIndex] === null) {
         // Richtige Position
+        logDur();
         STATE.boardState[slotIndex] = pieceIndex;
         
         // Entferne das Teil aus der Liste der unplatzierten Teile
@@ -802,6 +812,7 @@ DOM.plane.addEventListener('click', async (e) => {
     if (DOM.startEntity.getAttribute('visible') === 'false') return; 
     
     STATE.permissionTime = Date.now();
+    STATE.taskStartTime=Date.now();
     
     await startStudySession();
 
