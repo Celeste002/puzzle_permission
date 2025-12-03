@@ -68,7 +68,7 @@ const DOM = {
 // Firebase Refs und Client-ID
 const PUZZLE_REF = ref(db, "puzzle/state");
 const CLIENT_ID = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('client-' + Math.random().toString(36).slice(2));
-const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
+
 
 // =========================================================================
 // II. ZUSTANDSMANAGEMENT
@@ -130,8 +130,10 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
-function logDur() {
+const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
+function logDur(event) {
     push(TASK_TIME_REF, {
+        event: event,
         duration: ((Date.now()-STATE.taskStartTime)/1000).toFixed(2),
         device: "Laptop"
     });
@@ -257,7 +259,7 @@ function checkSolved() {
     const permissonDuration = ((STATE.endPermissionTime - STATE.permissionTime) / 1000).toFixed(2);
     const puzzleDuration = ((endTime - STATE.overallTime) / 1000).toFixed(2);
     const totalDuration = ((endTime - STATE.permissionTime) / 1000).toFixed(2);
-    logDur();
+    logDur("solved");
     DOM.puzzleText.setAttribute("text",{value:`Geschafft! Du hast \n⏱ ${STATE.errors} Fehler gemacht!`, align:"center", color:"#fff", width:8, wrapCount:30});
     DOM.puzzleText.setAttribute("visible","true");
     DOM.gamezone.setAttribute("visible", "false");
@@ -384,7 +386,7 @@ function onSlotClick(e) {
 
     if (pieceIndex === slotIndex && STATE.boardState[slotIndex] === null) {
         // Richtige Position
-        logDur();
+        logDur("selected"+pieceIndex);
         STATE.boardState[slotIndex] = pieceIndex;
         
         // Entferne das Teil aus der Liste der unplatzierten Teile
