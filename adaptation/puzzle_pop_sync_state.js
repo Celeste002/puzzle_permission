@@ -127,7 +127,10 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
-const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+const TASK_TIME_REF = ref(db, 'sessions/' + 'Laptop_Puzzle_'+ getRandomInt(1000) + '/taskStartTime');
 
 function logDur(event) {
     push(TASK_TIME_REF, {
