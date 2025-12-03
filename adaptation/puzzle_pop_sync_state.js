@@ -67,8 +67,6 @@ const DOM = {
 // Firebase Refs und Client-ID
 const puzzleRef = ref(db, "puzzle/state");
 const CLIENT_ID = crypto.randomUUID ? crypto.randomUUID() : ('client-' + Math.random().toString(36).slice(2));
-const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
-
 
 // =========================================================================
 // II. ZUSTANDSMANAGEMENT
@@ -129,6 +127,8 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
+const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
+
 function logDur() {
     push(TASK_TIME_REF, {
         duration: ((Date.now()-STATE.taskTime)/1000).toFixed(2),
