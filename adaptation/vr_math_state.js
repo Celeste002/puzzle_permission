@@ -34,7 +34,7 @@ let remember = false;
 let permissionTime;
 let overallTime;
 let permissionPopupStartTime = null;
-let taskStartTime = null;
+let taskStartTime = 0;
 
 let counter=0;
 
@@ -43,6 +43,7 @@ const permissions = {
   audio: ref(db, "permission_math/audio"),
   data: ref(db, "permission_math/data")
 };
+const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
 
 let currentQuestion =  0;
 let userAnswers = [];
@@ -85,7 +86,13 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
-
+function logDur() {
+    push(TASK_TIME_REF, {
+        duration: ((Date.now()-taskStartTime)/1000).toFixed(2),
+        device: "Laptop"
+    });
+    console.log("[LOG]", taskStartTime);
+}
 async function endStudySession() {
     console.log("Study session finished. Resetting session ID.");
 
@@ -432,7 +439,7 @@ function loadQuestion() {
 
   const q = questions[currentQuestion];
   questionText.setAttribute("value", q.q);
-
+  
   const answerButtons = document.querySelectorAll('.answer');
   answerButtons.forEach((btn, i) => {
     btn.classList.add("clickable")
@@ -457,6 +464,7 @@ function loadQuestion() {
         correctAnswer: q.correct
       });
       }
+      logDur(),
       logEvent("task_completed", {
         question: currentQuestion,
         duration: ((Date.now() - taskStartTime)/ 1000).toFixed(2)
@@ -497,7 +505,7 @@ function showResult() {
   answerButtons.forEach((btn) => {
     btn.classList.remove("clickable")
   })
-
+  logDur();
   const correct = userAnswers.filter((a) => a === true).length;
   const resultText = `Ergebnis: ${score} von ${questions.length} richtig!`;
   quizResult.setAttribute("value", resultText);
@@ -574,5 +582,6 @@ if (resetBtn) {
 }
 
 initPermissionListeners();
+
 
 
