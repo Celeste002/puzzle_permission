@@ -258,7 +258,7 @@ function onPieceClick(e) {
             STATE.selectedPiece = target;
             STATE.selectedPiece.classList.add("selected-piece"); // Fügt die grüne Markierung hinzu
             console.log("Teil ausgewählt:", target.dataset.piece);
-            logDur(("piece_selected "+target.dataset.piece);
+            logDur("piece_selected "+target.dataset.piece);
             logEvent("piece_selected", { pieceIndex: target.dataset.piece, duration: (STATE.overallTime/ 1000).toFixed(2) });
         }
     }
