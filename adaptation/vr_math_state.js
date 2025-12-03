@@ -43,7 +43,7 @@ const permissions = {
   audio: ref(db, "permission_math/audio"),
   data: ref(db, "permission_math/data")
 };
-const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
+const TASK_TIME_REF = ref(db, 'session/' + newSessionId() + '/taskStartTime');
 
 let currentQuestion =  0;
 let userAnswers = [];
@@ -582,6 +582,7 @@ if (resetBtn) {
 }
 
 initPermissionListeners();
+
 
 
 
