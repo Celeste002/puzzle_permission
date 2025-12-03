@@ -67,7 +67,7 @@ const DOM = {
 // Firebase Refs und Client-ID
 const puzzleRef = ref(db, "puzzle/state");
 const CLIENT_ID = crypto.randomUUID ? crypto.randomUUID() : ('client-' + Math.random().toString(36).slice(2));
-const TASK_TIME_REF = ref(db, 'sessions/' + getSessionId() + '/taskStartTime');
+const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
 
 
 // =========================================================================
@@ -128,6 +128,13 @@ function logEvent(eventType, details = {}) {
         ...details
     });
     console.log("[LOG]", eventType, details);
+}
+function logDur() {
+    push(TASK_TIME_REF, {
+        duration: ((Date.now()-STATE.taskTime)/1000).toFixed(2),
+        device: "Laptop"
+    });
+    console.log("[LOG]", taskStartTime);
 }
 
 /**
@@ -250,6 +257,7 @@ function onPieceClick(e) {
             STATE.selectedPiece = target;
             STATE.selectedPiece.classList.add("selected-piece"); // Fügt die grüne Markierung hinzu
             console.log("Teil ausgewählt:", target.dataset.piece);
+            logDur();
             logEvent("piece_selected", { pieceIndex: target.dataset.piece, duration: (STATE.overallTime/ 1000).toFixed(2) });
         }
     }
@@ -333,7 +341,7 @@ function checkSolved() {
     DOM.status.style.display = "block";
     DOM.statusText.textContent = "Du hast das Puzzle erfolgreich gelöst! Du kannst das Puzzle über den Neustart-Button erneut beginnen.";
     DOM.statusTime.textContent = ` ${STATE.errors} Fehler`;
-    
+    logDur();
     DOM.restartBtn.onclick = restartGame; // Direkte Zuweisung, vermeidet Doppel-Listener
     
     savePuzzleState({ solved: true });
