@@ -68,7 +68,7 @@ const DOM = {
 // Firebase Refs und Client-ID
 const PUZZLE_REF = ref(db, "puzzle/state");
 const CLIENT_ID = (crypto && crypto.randomUUID) ? crypto.randomUUID() : ('client-' + Math.random().toString(36).slice(2));
-
+const TASK_TIME_REF = ref(db, 'sessions/' + STATE.sessionId + '/taskStartTime');
 
 // =========================================================================
 // II. ZUSTANDSMANAGEMENT
@@ -408,7 +408,29 @@ function onSlotClick(e) {
     }
 }
 
-
+async function logTaskCompletion() {
+    const startSnap = await get(TASK_TIME_REF);
+    
+    if (!startSnap.exists()) {
+        console.error("Task Completion Time: Startzeit nicht in Firebase gefunden! Keine Zeitmessung möglich.");
+        return;
+    }
+    
+    const taskStartTime = startSnap.val();
+    const endTime = Date.now();
+    const durationMs = endTime - taskStartTime;
+    const durationSec = (durationMs / 1000).toFixed(2);
+    
+    // Loggen des finalen Events in die Datenbank
+    logEvent("task_completed_cross_device", { 
+        durationMs: durationSec / 60,
+        durationSec: durationSec,
+        endDevice: "desktop"
+    });
+    
+    // OPTIONAL: Firebase-Knoten löschen, um das nächste Experiment vorzubeschreiben
+    // await set(TASK_TIME_REF, null);
+}
 // =========================================================================
 // V. PUZZLE STATE SYNCHRONISIERUNG (NUR MANUELL/SPEICHERN)
 // =========================================================================
@@ -651,6 +673,7 @@ async function resetPuzzle() {
     // 2. Puzzle-State in Firebase zurücksetzen (set auf null)
     const totalPieces = CONFIG.PUZZLE.TOTAL_PIECES;
     await set(PUZZLE_REF, null); 
+    await set(TASK_TIME_REF, null);
     
     // 3. Lokalen State zurücksetzen
     STATE.boardState.fill(null);
@@ -667,7 +690,21 @@ async function resetPuzzle() {
     
     console.log('[VR SYNC] Puzzle-State und Permissions zurückgesetzt');
 }
-
+async function writeStartTimeToFirebase(device) {
+    const snap = await get(TASK_TIME_REF);
+    if (!snap.exists()) {
+        const startTime = Date.now();
+        await set(TASK_TIME_REF, startTime);
+        logEvent("cross_device_timing_started", {
+            device: device,
+            startTime: startTime
+        });
+        return startTime;
+    }
+    // Wenn die Zeit bereits existiert (z.B. nach einem Geräte-Wechsel), 
+    // wird die vorhandene Zeit einfach zurückgegeben (nicht überschrieben).
+    return snap.val();
+}
 /**
  * Startet das VR-Spiel und lädt ggf. den Zustand (einmaliger `get`).
  */
@@ -765,6 +802,7 @@ async function restartVRPuzzle() {
   
   // 2. Study Session beenden
   await endStudySession();
+    await set(TASK_TIME_REF, null);
 
   // 3. Permissions zurücksetzen, wenn "Merken" nicht aktiv war
   if(!STATE.audioPermission.remember){
@@ -801,6 +839,7 @@ DOM.plane.addEventListener('click', async (e) => {
     if (DOM.startEntity.getAttribute('visible') === 'false') return; 
     
     STATE.permissionTime = Date.now();
+    await writeStartTimeToFirebase("desktop");
     
     await startStudySession();
 
