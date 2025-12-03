@@ -130,8 +130,12 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
-const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
+
 function logDur(event) {
+    let TASK_TIME_REF = ref(db, 'sessions/' + 'VR_Puzzle_'+getRandomInt(1000) + '/taskStartTime');
     push(TASK_TIME_REF, {
         event: event,
         duration: ((Date.now()-STATE.taskStartTime)/1000).toFixed(2),
