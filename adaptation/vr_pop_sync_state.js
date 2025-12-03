@@ -456,6 +456,7 @@ async function savePuzzleStateVR(additionalPayload = {}) {
     const payload = { 
       boardState: STATE.boardState, 
       unplacedPieces: STATE.unplacedPieces,
+        duration: STATE.overallTime,
       errors: STATE.errors,
       solved: STATE.boardState.every((val, idx) => val === idx),
       timestamp: Date.now(), 
@@ -469,7 +470,8 @@ async function savePuzzleStateVR(additionalPayload = {}) {
         logEvent("puzzle_state_saved", { 
             placedCount: STATE.boardState.filter(v => v !== null).length, 
             isCompleted: payload.solved,
-            timestamp: payload.timestamp
+            timestamp: payload.timestamp,
+            duration: STATE.overallTime
         });
     } catch (err) {
         console.warn('[VR SYNC] save failed', err);
