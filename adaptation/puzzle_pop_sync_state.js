@@ -130,9 +130,9 @@ function logEvent(eventType, details = {}) {
 function getRandomInt(max) {
   return Math.floor(Math.random() * max);
 }
-const TASK_TIME_REF = ref(db, 'sessions/' + 'Laptop_Puzzle_'+ getRandomInt(1000) + '/taskStartTime');
-
 function logDur(event) {
+    const TASK_TIME_REF = ref(db, 'sessions/' + 'Laptop_Puzzle_'+ getRandomInt(1000) + '/taskStartTime');
+
     push(TASK_TIME_REF, {
         event: event,
         duration: ((Date.now()-STATE.taskTime)/1000).toFixed(2),
