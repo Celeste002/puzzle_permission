@@ -32,7 +32,7 @@ const permissions = {
   audio: ref(db, "permission_math/audio"),
   data: ref(db, "permission_math/data")
 };
-const TASK_TIME_REF = ref(db, 'sessions/' + newSessionId() + '/taskStartTime');
+
 
 // -------------------- Spielzustand --------------------
 let currentQuestion = 0;
@@ -78,7 +78,11 @@ function logEvent(eventType, details = {}) {
     });
     console.log("[LOG]", eventType, details);
 }
+function getRandomInt(max) {
+  return Math.floor(Math.random() * max);
+}
 function logDur(event) {
+  let TASK_TIME_REF = ref(db, 'sessions/' + 'Laptop_Mathe_'+getRandomInt(1000) + '/taskStartTime');
       push(TASK_TIME_REF, {
           event: event,
           duration: ((Date.now()-taskStartTime)/1000).toFixed(2),
@@ -558,6 +562,7 @@ rememberChk.addEventListener("change", () => {
 
 // -------------------- Init --------------------
 initPermissionListeners();
+
 
 
 
